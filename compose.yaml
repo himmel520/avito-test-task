@@ -8,6 +8,6 @@ services:
         - POSTGRES_USER=postgres
         - POSTGRES_DB=tender-service
     volumes:
-    - "./migrations/000001_tender_service_table.sql:/docker-entrypoint-initdb.d/init.sql"
+    - "./migrations/000001_tender_service.sql:/docker-entrypoint-initdb.d/init.sql"
     ports:
     - "5432:5432"

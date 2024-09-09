@@ -71,7 +71,6 @@ CREATE TABLE IF NOT EXISTS tender_version (
     PRIMARY KEY (tender_id, version) 
 );
 
-
 -- BID таблицы
 DO $$
 BEGIN
