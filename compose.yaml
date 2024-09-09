@@ -1,0 +1,13 @@
+services:
+  pg:
+    restart: always
+    container_name: pg_require
+    image: postgres:alpine3.19
+    environment:
+        - POSTGRES_PASSWORD=postgres
+        - POSTGRES_USER=postgres
+        - POSTGRES_DB=tender-service
+    volumes:
+    - "./migrations/000001_tender_service_table.sql:/docker-entrypoint-initdb.d/init.sql"
+    ports:
+    - "5432:5432"
