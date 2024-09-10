@@ -29,30 +29,38 @@ func (h *Handler) InitRoutes() *gin.Engine {
 
 		tenders := api.Group("/tenders")
 		{
-			tenders.GET("", h.GetTenders) // Получение списка тендеров
+			tenders.GET("", h.GetTenders)        // Получение списка тендеров
 			tenders.POST("/new", h.CreateTender) // Создание нового тендера
-			tenders.GET("/my", h.GetMyTenders) // Получить тендеры пользователя
-			tenders.GET("/:tenderId/status", h.GetTenderStatus) // Получение текущего статуса тендера
-			tenders.PUT("/:tenderId/status", h.UpdateTenderStatus) // Изменение статуса тендера
-			tenders.PATCH("/:tenderId/edit", h.EditTender) // Редактирование тендера
+			tenders.GET("/my", h.GetMyTenders)   // Получить тендеры пользователя
+
+			tenders.GET("/:tenderId/status", h.GetTenderStatus)                  // Получение текущего статуса тендера
+			tenders.PUT("/:tenderId/status", h.UpdateTenderStatus)               // Изменение статуса тендера
+			tenders.PATCH("/:tenderId/edit", h.EditTender)                       // Редактирование тендера
 			tenders.PUT("/:tenderId/rollback/:version", h.RollbackTenderVersion) // Откат версии тендера
 		}
 
 		bids := api.Group("/bids")
 		{
 			bids.POST("/new", h.CreateBid) // Создание нового предложения
-			bids.GET("/my", h.GetMyBids) // Получение списка ваших предложений
-			bids.GET("/:tenderId/list", h.GetBidsForTender) // Получение списка предложений для тендера
-			bids.GET("/:bidId/status", h.GetBidStatus) // Получение текущего статуса предложения
-			bids.PUT("/:bidId/status", h.UpdateBidStatus) // Изменение статуса предложения
-			bids.PATCH("/:bidId/edit", h.EditBid) // Редактирование параметров предложения
-			bids.PUT("/:bidId/submit_decision", h.SubmitDecision) // Отправка решения по предложению
-			bids.PUT("/:bidId/feedback", h.SubmitFeedback) // Отправка отзыва по предложению
-			bids.PUT("/:bidId/rollback/:version", h.RollbackBidVersion) // Откат версии предложения
-			bids.GET("/:tenderId/reviews", h.GetBidReviews) // Просмотр отзывов на прошлые предложения
+			bids.GET("/my", h.GetMyBids)   // Получение списка ваших предложений
+
+			// route /:bidId
+			{
+				bids.GET("/:id/status", h.GetBidStatus)                  // Получение текущего статуса предложения
+				bids.PUT("/:id/status", h.UpdateBidStatus)               // Изменение статуса предложения
+				bids.PATCH("/:id/edit", h.EditBid)                       // Редактирование параметров предложения
+				bids.PUT("/:id/submit_decision", h.SubmitDecision)       // Отправка решения по предложению
+				bids.PUT("/:id/feedback", h.SubmitFeedback)              // Отправка отзыва по предложению
+				bids.PUT("/:id/rollback/:version", h.RollbackBidVersion) // Откат версии предложения
+			}
+
+			// route /:tenderId
+			{
+				bids.GET("/:id/list", h.GetBidsForTender) // Получение списка предложений для тендера 
+				bids.GET("/:id/reviews", h.GetBidReviews) // Просмотр отзывов на прошлые предложения
+			}
 		}
 	}
 
 	return r
 }
-

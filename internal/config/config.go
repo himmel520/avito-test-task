@@ -12,7 +12,6 @@ type ServerConfig struct {
 
 type PGConfig struct {
 	Conn     string
-	JdbcUrl  string
 	Username string
 	Password string
 	Host     string
@@ -36,7 +35,6 @@ func New() (*Config, error) {
 		},
 		PG: PGConfig{
 			Conn:     os.Getenv("POSTGRES_CONN"),
-			JdbcUrl:  os.Getenv("POSTGRES_JDBC_URL"),
 			Username: os.Getenv("POSTGRES_USERNAME"),
 			Password: os.Getenv("POSTGRES_PASSWORD"),
 			Host:     os.Getenv("POSTGRES_HOST"),

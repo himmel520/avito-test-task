@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -11,7 +10,7 @@ import (
 
 	"git.codenrock.com/avito-testirovanie-na-backend-1270/cnrprod1725721384-team-77753/zadanie-6105/internal/config"
 	httphandler "git.codenrock.com/avito-testirovanie-na-backend-1270/cnrprod1725721384-team-77753/zadanie-6105/internal/handlers/http"
-	posgres "git.codenrock.com/avito-testirovanie-na-backend-1270/cnrprod1725721384-team-77753/zadanie-6105/internal/repository/postgres"
+	"git.codenrock.com/avito-testirovanie-na-backend-1270/cnrprod1725721384-team-77753/zadanie-6105/internal/repository/postgres"
 	"git.codenrock.com/avito-testirovanie-na-backend-1270/cnrprod1725721384-team-77753/zadanie-6105/internal/server"
 	service "git.codenrock.com/avito-testirovanie-na-backend-1270/cnrprod1725721384-team-77753/zadanie-6105/internal/services"
 )
@@ -24,10 +23,13 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Println(cfg)
+	// Migrate: add new tables if not exists
+	if err := server.Migrate(&cfg.PG, log); err != nil {
+		log.Fatal(err)
+	}
 
-	// Слои
-	repo, err := posgres.New(&cfg.PG)
+	// Layers
+	repo, err := postgres.New(&cfg.PG)
 	if err != nil {
 		log.Fatalf("unable to connect to pool: %v", err)
 	}
@@ -35,7 +37,7 @@ func main() {
 	srv := service.New(repo, log)
 	handler := httphandler.New(srv, log)
 
-	// Сервер
+	// Server
 	app := server.New(handler.InitRoutes(), &cfg.Server)
 	go func() {
 		log.Infof("the server is starting on %v", cfg.Server.Address)
