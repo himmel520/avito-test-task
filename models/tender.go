@@ -37,7 +37,6 @@ type TenderCreate struct {
 	Name            string            `json:"name" validate:"required,max=100"`
 	Description     string            `json:"description" validate:"required,max=500"`
 	ServiceType     TenderServiceType `json:"serviceType" validate:"required,oneof=Construction Delivery Manufacture"`
-	Status          TenderStatus      `json:"status" validate:"required,oneof=Created Published Closed"`
 	OrganizationID  OrganizationID    `json:"organizationId" validate:"required,max=100"`
 	CreatorUsername string            `json:"creatorUsername" validate:"required,max=50"`
 }

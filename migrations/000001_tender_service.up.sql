@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS tender (
     name VARCHAR(100) NOT NULL,
     description TEXT CHECK (LENGTH(description) <= 500),
     service_type service_type NOT NULL,
-    status tender_status NOT NULL,
+    status tender_status NOT NULL DEFAULT 'Created',
     organization_id UUID NOT NULL REFERENCES organization(id) ON DELETE CASCADE,
     version INT NOT NULL DEFAULT 1 CHECK (version >= 1),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -90,7 +90,7 @@ CREATE TABLE IF NOT EXISTS bid (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(100) NOT NULL,
     description TEXT NOT NULL CHECK (LENGTH(description) <= 500), 
-    status bid_status NOT NULL,
+    status bid_status NOT NULL DEFAULT 'Created',
     tender_id UUID NOT NULL REFERENCES tender(id) ON DELETE CASCADE, 
     author_type bid_author_type NOT NULL,
     author_id UUID NOT NULL, 

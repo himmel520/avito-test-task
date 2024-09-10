@@ -44,12 +44,11 @@ type BidResponse struct {
 
 // BidCreate представляет данные для создания нового предложения
 type BidCreate struct {
-	Name            string    `json:"name" validate:"required,max=100"`
-	Description     string    `json:"description" validate:"required,max=500"`
-	Status          BidStatus `json:"status" validate:"required,oneof=Created Published Canceled Approved Rejected"`
-	TenderID        string    `json:"tenderId" validate:"required,max=100"`
-	OrganizationID  string    `json:"organizationId" validate:"required,max=100"`
-	CreatorUsername string    `json:"creatorUsername" validate:"required"`
+	Name        string        `json:"name" validate:"required,max=100"`
+	Description string        `json:"description" validate:"required,max=500"`
+	TenderID    string        `json:"tenderId" validate:"required,max=100"`
+	AuthorType  BidAuthorType `json:"authorType" validate:"required,oneof=Organization User"`
+	AuthorId    string        `json:"authorId" validate:"required,max=100"`
 }
 
 // BidEdit представляет данные для редактирования предложения
