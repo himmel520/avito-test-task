@@ -15,20 +15,20 @@ type TenderService interface {
 	GetTenderStatus(ctx context.Context, tenderID string) (*models.TenderStatus, error)
 	UpdateTenderStatus(ctx context.Context, tenderID string, status models.TenderStatus) (*models.TenderResponse, error)
 	EditTender(ctx context.Context, tenderID string, username string, tender models.TenderEdit) (*models.TenderResponse, error)
-	RollbackTender(ctx context.Context, tenderID string, version int, username string) (*models.TenderResponse, error)
+	RollbackTender(ctx context.Context, tenderID string, version int32, username string) (*models.TenderResponse, error)
 }
 
 type BidService interface {
-	CreateBid(ctx context.Context, bid models.Bid) (models.Bid, error)
-	GetUserBids(ctx context.Context, username string, limit, offset int) ([]models.Bid, error)
-	GetBidsForTender(ctx context.Context, tenderID, username string, limit, offset int) ([]models.Bid, error)
-	GetBidByID(ctx context.Context, bidID string) (models.Bid, error)
-	UpdateBidStatus(ctx context.Context, bidID string, status models.BidStatus) (models.Bid, error)
-	EditBid(ctx context.Context, bid models.Bid) (models.Bid, error)
-	SubmitBidDecision(ctx context.Context, bidID string, decision models.BidDecision) (models.Bid, error)
-	SubmitBidFeedback(ctx context.Context, bidID string, feedback models.BidFeedback) (models.Bid, error)
-	RollbackBid(ctx context.Context, bidID string, version int) (models.Bid, error)
-	GetBidReviews(ctx context.Context, tenderID, authorUsername, requesterUsername string, limit, offset int) ([]models.BidReview, error)
+	CreateBid(ctx context.Context, bid *models.BidCreate) (*models.BidResponse, error)
+	GetUserBids(ctx context.Context, username string, limit, offset int32) ([]*models.BidResponse, error)
+	GetBidsForTender(ctx context.Context, tenderID, username string, limit, offset int32) ([]*models.BidResponse, error)
+	GetBidStatus(ctx context.Context, bidID string, username string) (*models.BidStatus, error)
+	UpdateBidStatus(ctx context.Context, bidID, username string, status *models.BidStatus) (*models.BidResponse, error)
+	EditBid(ctx context.Context, bidID, username string, bid *models.BidEdit) (*models.BidResponse, error)
+	SubmitBidDecision(ctx context.Context, bidID, username string, decision *models.BidDecision) (*models.BidResponse, error)
+	SubmitBidFeedback(ctx context.Context, bidID, username string, feedback *models.BidFeedback) (*models.BidResponse, error)
+	RollbackBid(ctx context.Context, bidID, username string, version int32) (*models.BidResponse, error)
+	GetBidReviews(ctx context.Context, tenderID, authorUsername, requesterUsername string, limit, offset int32) ([]*models.BidReview, error)
 }
 
 type Service struct {

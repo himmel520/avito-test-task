@@ -34,7 +34,7 @@ func (p *Postgres) UpdateTender(ctx context.Context, tender models.TenderEdit) (
 	return nil, nil
 }
 
-func (p *Postgres) RollbackTender(ctx context.Context, tenderID string, version int) (*models.TenderResponse, error) {
+func (p *Postgres) RollbackTender(ctx context.Context, tenderID string, version int32) (*models.TenderResponse, error) {
 	// Реализация отката тендера
 	return nil, nil
 }
