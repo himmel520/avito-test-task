@@ -44,17 +44,17 @@ type BidResponse struct {
 
 // BidCreate представляет данные для создания нового предложения
 type BidCreate struct {
-	Name        string        `json:"name" validate:"required,max=100"`
-	Description string        `json:"description" validate:"required,max=500"`
-	TenderID    string        `json:"tenderId" validate:"required,max=100"`
-	AuthorType  BidAuthorType `json:"authorType" validate:"required,oneof=Organization User"`
-	AuthorId    string        `json:"authorId" validate:"required,max=100"`
+	Name        string        `json:"name" binding:"required,max=100"`
+	Description string        `json:"description" binding:"required,max=500"`
+	TenderID    string        `json:"tenderId" binding:"required,max=100"`
+	AuthorType  BidAuthorType `json:"authorType" binding:"required,oneof=Organization User"`
+	AuthorId    string        `json:"authorId" binding:"required,max=100"`
 }
 
 // BidEdit представляет данные для редактирования предложения
 type BidEdit struct {
-	Name        *string `json:"name" validate:"omitempty,max=100"`
-	Description *string `json:"description" validate:"omitempty,max=500"`
+	Name        *string `json:"name" binding:"omitempty,max=100"`
+	Description *string `json:"description" binding:"omitempty,max=500"`
 }
 
 // BidFeedback представляет отзыв на предложение

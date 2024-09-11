@@ -14,6 +14,8 @@ type TenderRepository interface {
 	UpdateTenderStatus(ctx context.Context, tenderID string, status models.TenderStatus) (*models.TenderResponse, error)
 	UpdateTender(ctx context.Context, tender models.TenderEdit) (*models.TenderResponse, error)
 	RollbackTender(ctx context.Context, tenderID string, version int32) (*models.TenderResponse, error)
+
+	СheckOrganizationPermission(ctx context.Context, organizationID, username string) error
 }
 
 type BidRepository interface {

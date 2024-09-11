@@ -56,7 +56,7 @@ func (h *Handler) InitRoutes() *gin.Engine {
 
 			// route /:tenderId
 			{
-				bids.GET("/:id/list", h.GetBidsForTender) // Получение списка предложений для тендера 
+				bids.GET("/:id/list", h.GetBidsForTender) // Получение списка предложений для тендера
 				bids.GET("/:id/reviews", h.GetBidReviews) // Просмотр отзывов на прошлые предложения
 			}
 		}

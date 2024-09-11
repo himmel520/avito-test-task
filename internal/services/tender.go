@@ -13,6 +13,13 @@ func (s *Service) GetTenders(ctx context.Context, serviceType []models.TenderSer
 
 // CreateTender создает новый тендер
 func (s *Service) CreateTender(ctx context.Context, tender *models.TenderCreate) (*models.TenderResponse, error) {
+	// Тендеры могут создавать только пользователи от имени своей организации
+	if err := s.repo.СheckOrganizationPermission(ctx, tender.OrganizationID, tender.CreatorUsername); err != nil {
+		// пользователь не имеет доступ
+		return nil, err
+	}
+
+	// пользователь имеет доступ
 	return s.repo.CreateTender(ctx, tender)
 }
 

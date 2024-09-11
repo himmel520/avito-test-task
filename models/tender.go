@@ -34,19 +34,16 @@ type TenderResponse struct {
 
 // TenderCreate представляет данные для создания нового тендера
 type TenderCreate struct {
-	Name            string            `json:"name" validate:"required,max=100"`
-	Description     string            `json:"description" validate:"required,max=500"`
-	ServiceType     TenderServiceType `json:"serviceType" validate:"required,oneof=Construction Delivery Manufacture"`
-	OrganizationID  OrganizationID    `json:"organizationId" validate:"required,max=100"`
-	CreatorUsername string            `json:"creatorUsername" validate:"required,max=50"`
+	Name            string            `json:"name" binding:"required,max=100"`
+	Description     string            `json:"description" binding:"required,max=500"`
+	ServiceType     TenderServiceType `json:"serviceType" binding:"required,oneof=Construction Delivery Manufacture"`
+	OrganizationID  string            `json:"organizationId" binding:"required,max=100,uuid"`
+	CreatorUsername string            `json:"creatorUsername" binding:"required,max=50"`
 }
 
 // TenderEdit представляет данные для редактирования существующего тендера
 type TenderEdit struct {
-	Name        *string            `json:"name" validate:"omitempty,max=100"`
-	Description *string            `json:"description" validate:"omitempty,max=500"`
-	ServiceType *TenderServiceType `json:"serviceType" validate:"omitempty,oneof=Construction Delivery Manufacture"`
+	Name        *string            `json:"name" binding:"omitempty,max=100"`
+	Description *string            `json:"description" binding:"omitempty,max=500"`
+	ServiceType *TenderServiceType `json:"serviceType" binding:"omitempty,oneof=Construction Delivery Manufacture"`
 }
-
-// OrganizationID представляет уникальный идентификатор организации
-type OrganizationID string

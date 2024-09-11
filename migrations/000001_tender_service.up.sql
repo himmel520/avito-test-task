@@ -53,20 +53,20 @@ CREATE TABLE IF NOT EXISTS tender (
     name VARCHAR(100) NOT NULL,
     description TEXT CHECK (LENGTH(description) <= 500),
     service_type service_type NOT NULL,
-    status tender_status NOT NULL DEFAULT 'Created',
+    status tender_status DEFAULT 'Created',
     organization_id UUID NOT NULL REFERENCES organization(id) ON DELETE CASCADE,
-    version INT NOT NULL DEFAULT 1 CHECK (version >= 1),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    version INT DEFAULT 1 CHECK (version >= 1),
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS tender_version (
     tender_id UUID NOT NULL REFERENCES tender(id) ON DELETE CASCADE, 
-    version INT NOT NULL CHECK (version >= 1), 
     name VARCHAR(100) NOT NULL,
     description TEXT CHECK (LENGTH(description) <= 500), 
     service_type service_type NOT NULL,
-    status tender_status NOT NULL,
-    organization_id UUID NOT NULL REFERENCES organization(id) ON DELETE CASCADE, 
+    status tender_status DEFAULT 'Created',
+    organization_id UUID NOT NULL REFERENCES organization(id) ON DELETE CASCADE,
+    version INT DEFAULT 1 CHECK (version >= 1),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), 
     PRIMARY KEY (tender_id, version) 
 );
