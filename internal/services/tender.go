@@ -72,5 +72,10 @@ func (s *Service) EditTender(ctx context.Context, tenderID string, username stri
 
 // RollbackTender откатывает тендер к указанной версии
 func (s *Service) RollbackTender(ctx context.Context, tenderID string, version int32, username string) (*models.TenderResponse, error) {
+	// проверка прав
+	if err := s.repo.IsTenderCreator(ctx, tenderID, username); err != nil {
+		return nil, err
+	}
+	
 	return s.repo.RollbackTender(ctx, tenderID, version)
 }

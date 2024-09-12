@@ -223,8 +223,59 @@ func (p *Postgres) UpdateTender(ctx context.Context, tenderID string, tenderEdit
 }
 
 func (p *Postgres) RollbackTender(ctx context.Context, tenderID string, version int32) (*models.TenderResponse, error) {
-	// Реализация отката тендера
-	return nil, nil
+	tx, err := p.DB.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+
+	defer func() {
+		if err != nil {
+			tx.Rollback(ctx)
+		} else {
+			err = tx.Commit(ctx)
+		}
+	}()
+
+	// Добавить текущую версию в историю
+	pgCmd, err := tx.Exec(ctx, `
+	INSERT INTO tender_version 
+		(tender_id, name, description, service_type, status, organization_id, version, created_at) 
+	SELECT
+    	id, name, description, service_type, status, organization_id, version, created_at
+	FROM tender
+	WHERE id = $1;`, tenderID)
+	if pgCmd.RowsAffected() == 0 {
+		return nil, repository.ErrTenderNotFound
+	}
+
+	// Вытащить из истории нужную версию и обновить данные в основной таблице с инкрементом версии
+	tender := &models.TenderResponse{}
+	err = tx.QueryRow(ctx, `
+	with tv as (
+		select
+			name, description, service_type, status, organization_id, version, created_at
+		from tender_version
+			where tender_id = $2 and version = $3
+	)
+	update tender t
+	set
+		name = tv.name,
+		description = tv.description,
+		service_type = tv.service_type,
+		status = tv.status,
+		organization_id = tv.organization_id,
+		version = t.version + 1,
+		created_at = tv.created_at
+	from tv
+		where t.id = $1 
+	returning t.*;`, tenderID, tenderID, version).Scan(
+		&tender.ID, &tender.Name, &tender.Description, &tender.ServiceType, &tender.Status,
+		&tender.OrganizationID, &tender.Version, &tender.CreatedAt)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, repository.ErrTenderORVersionNotFound
+	}
+
+	return tender, err
 }
 
 func (p *Postgres) СheckOrganizationPermission(ctx context.Context, organizationID *models.OrganizationID, username string) (string, error) {

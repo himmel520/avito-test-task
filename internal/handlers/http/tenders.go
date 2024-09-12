@@ -103,9 +103,6 @@ func (h *Handler) GetTenderStatus(c *gin.Context) {
 	case errors.Is(err, repository.ErrRelationNotExist):
 		c.AbortWithStatusJSON(http.StatusForbidden, errorResponse{err.Error()})
 		return
-	case errors.Is(err, repository.ErrOrganizationDepencyNotFound):
-		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{err.Error()})
-		return
 	case err != nil:
 		h.log.Error(err)
 		c.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse{err.Error()})
@@ -196,6 +193,34 @@ func (h *Handler) EditTender(c *gin.Context) {
 
 // Откат версии тендера
 func (h *Handler) RollbackTenderVersion(c *gin.Context) {
-	h.log.Info("RollbackTenderVersion endpoint called")
-	c.JSON(http.StatusOK, gin.H{"message": "Tender version rolled back"})
+	var uri rollbackTenderUri
+	if err := c.BindUri(&uri); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{fmt.Sprintf("неккоректный uri: %v", err)})
+		return
+	}
+
+	var query usernameQuery
+	if err := c.BindQuery(&query); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{fmt.Sprintf("неккоректный query: %v", err)})
+		return
+	}
+
+	tender, err := h.srv.RollbackTender(c.Request.Context(), uri.ID, uri.Version, query.Username)
+	switch {
+	case errors.Is(err, repository.ErrUserNotExist):
+		c.AbortWithStatusJSON(http.StatusUnauthorized, errorResponse{err.Error()})
+		return
+	case errors.Is(err, repository.ErrRelationNotExist):
+		c.AbortWithStatusJSON(http.StatusForbidden, errorResponse{err.Error()})
+		return
+	case errors.Is(err, repository.ErrTenderORVersionNotFound):
+		c.AbortWithStatusJSON(http.StatusNotFound, errorResponse{err.Error()})
+		return
+	case err != nil:
+		h.log.Error(err)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse{err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, tender)
 }
