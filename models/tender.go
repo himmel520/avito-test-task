@@ -53,6 +53,7 @@ type TenderEdit struct {
 	ServiceType *TenderServiceType `json:"serviceType" binding:"omitempty,oneof=Construction Delivery Manufacture"`
 }
 
+// IsEmpty проверяет, является ли объект TenderEdit пустым.
 func (t *TenderEdit) IsEmpty() bool {
 	return t.Name == nil && t.Description == nil && t.ServiceType == nil
 }

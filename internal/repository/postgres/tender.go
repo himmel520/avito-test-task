@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+// GetTenders возвращает список тендеров с заданными фильтрами и пагинацией
 func (p *Postgres) GetTenders(ctx context.Context, serviceType []models.TenderServiceType, limit, offset int32) ([]*models.TenderResponse, error) {
 	// формируем фильтр по enum service_type
 	var filter string
@@ -57,6 +58,7 @@ func (p *Postgres) GetTenders(ctx context.Context, serviceType []models.TenderSe
 	return tenders, nil
 }
 
+// CreateTender создает новый тендер и связывает его с сотрудником
 func (p *Postgres) CreateTender(ctx context.Context, tender *models.TenderCreate, employeeId string) (*models.TenderResponse, error) {
 	tx, err := p.DB.Begin(ctx)
 	if err != nil {
@@ -98,6 +100,7 @@ func (p *Postgres) CreateTender(ctx context.Context, tender *models.TenderCreate
 	return tenderResp, err
 }
 
+// GetUserTenders возвращает список тендеров, созданных конкретным пользователем
 func (p *Postgres) GetUserTenders(ctx context.Context, userId string, limit, offset int32) ([]*models.TenderResponse, error) {
 	rows, err := p.DB.Query(ctx, `
 	SELECT 
@@ -129,6 +132,7 @@ func (p *Postgres) GetUserTenders(ctx context.Context, userId string, limit, off
 	return tenders, nil
 }
 
+// GetTenderStatus возвращает статус и id организации для указанного тендера
 func (p *Postgres) GetTenderStatus(ctx context.Context, tenderID string) (*models.TenderStatus, *models.OrganizationID, error) {
 	var status *models.TenderStatus
 	var organizationID *models.OrganizationID
@@ -145,6 +149,7 @@ func (p *Postgres) GetTenderStatus(ctx context.Context, tenderID string) (*model
 	return status, organizationID, err
 }
 
+// UpdateTenderStatus обновляет статус тендера и возвращает обновленный тендер
 func (p *Postgres) UpdateTenderStatus(ctx context.Context, tenderID string, status models.TenderStatus) (*models.TenderResponse, error) {
 	tender := &models.TenderResponse{}
 
@@ -163,6 +168,7 @@ func (p *Postgres) UpdateTenderStatus(ctx context.Context, tenderID string, stat
 	return tender, err
 }
 
+// UpdateTender обновляет данные тендера и добавляет запись о новой версии в историю
 func (p *Postgres) UpdateTender(ctx context.Context, tenderID string, tenderEdit *models.TenderEdit) (*models.TenderResponse, error) {
 	tx, err := p.DB.Begin(ctx)
 	if err != nil {
@@ -222,6 +228,7 @@ func (p *Postgres) UpdateTender(ctx context.Context, tenderID string, tenderEdit
 	return tender, err
 }
 
+// RollbackTender откатывает тендер к указанной версии из истории и возвращает обновленный тендер
 func (p *Postgres) RollbackTender(ctx context.Context, tenderID string, version int32) (*models.TenderResponse, error) {
 	tx, err := p.DB.Begin(ctx)
 	if err != nil {
@@ -278,6 +285,7 @@ func (p *Postgres) RollbackTender(ctx context.Context, tenderID string, version 
 	return tender, err
 }
 
+// СheckOrganizationPermission проверяет, имеет ли пользователь права доступа к организации и возвращает его id
 func (p *Postgres) СheckOrganizationPermission(ctx context.Context, organizationID *models.OrganizationID, username string) (string, error) {
 	var existsRelation bool
 	var creatorId string
@@ -306,6 +314,7 @@ func (p *Postgres) СheckOrganizationPermission(ctx context.Context, organizatio
 	return creatorId, err
 }
 
+// IsTenderCreator проверяет, является ли пользователь создателем указанного тендера
 func (p *Postgres) IsTenderCreator(ctx context.Context, tenderId, username string) error {
 	var isCreator bool
 
@@ -330,6 +339,7 @@ func (p *Postgres) IsTenderCreator(ctx context.Context, tenderId, username strin
 	return err
 }
 
+// GetUserIDByName возвращает id пользователя по его имени
 func (p *Postgres) GetUserIDByName(ctx context.Context, username string) (string, error) {
 	var userId string
 	err := p.DB.QueryRow(ctx, `

@@ -31,11 +31,13 @@ type myTenderQuery struct {
 	Username string `form:"username" binding:"required,max=50"`
 }
 
+// editTenderQuery содержит параметры для редактирования статуса тендера
 type editTenderQuery struct {
 	Status   models.TenderStatus `form:"status" binding:"required,oneof=Created Published Closed"`
 	Username string              `form:"username" binding:"required,max=50"`
 }
 
+// rollbackTenderUri содержит параметры для отката тендера к определенной версии
 type rollbackTenderUri struct {
 	ID      string `uri:"tenderId" binding:"required,uuid"`
 	Version int32  `uri:"version" binding:"required,min=1"`

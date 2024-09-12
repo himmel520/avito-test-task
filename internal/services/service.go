@@ -9,12 +9,19 @@ import (
 )
 
 type TenderService interface {
+	// GetTenders возвращает список тендеров с применением фильтрации и пагинации
 	GetTenders(ctx context.Context, serviceType []models.TenderServiceType, limit, offset int32) ([]*models.TenderResponse, error)
+	// CreateTender создает новый тендер после проверки прав пользователя
 	CreateTender(ctx context.Context, tender *models.TenderCreate) (*models.TenderResponse, error)
+	// GetUserTenders возвращает тендеры, созданные указанным пользователем
 	GetUserTenders(ctx context.Context, username string, limit, offset int32) ([]*models.TenderResponse, error)
+	// GetTenderStatus возвращает статус тендера после проверки прав пользователя
 	GetTenderStatus(ctx context.Context, tenderID, username string) (*models.TenderStatus, error)
+	// UpdateTenderStatus обновляет статус тендера после проверки прав пользователя
 	UpdateTenderStatus(ctx context.Context, tenderID, username string, status models.TenderStatus) (*models.TenderResponse, error)
+	// EditTender редактирует существующий тендер после проверки прав пользователя
 	EditTender(ctx context.Context, tenderID string, username string, tender *models.TenderEdit) (*models.TenderResponse, error)
+	// RollbackTender откатывает тендер к указанной версии после проверки прав пользователя
 	RollbackTender(ctx context.Context, tenderID string, version int32, username string) (*models.TenderResponse, error)
 }
 
