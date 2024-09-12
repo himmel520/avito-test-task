@@ -95,9 +95,10 @@ CREATE TABLE IF NOT EXISTS bid (
     status bid_status NOT NULL DEFAULT 'Created',
     tender_id UUID NOT NULL REFERENCES tender(id) ON DELETE CASCADE, 
     author_type bid_author_type NOT NULL,
-    author_id UUID NOT NULL, 
+    author_id UUID NOT NULL REFERENCES employee(id) ON DELETE CASCADE, 
     version INT NOT NULL DEFAULT 1 CHECK (version >= 1), 
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE (tender_id, author_id)
 );
 
 CREATE TABLE IF NOT EXISTS bid_version (
@@ -107,7 +108,7 @@ CREATE TABLE IF NOT EXISTS bid_version (
     status bid_status NOT NULL, 
     tender_id UUID NOT NULL REFERENCES tender(id) ON DELETE CASCADE, 
     author_type bid_author_type NOT NULL, 
-    author_id UUID NOT NULL, 
+    author_id UUID NOT NULL REFERENCES employee(id) ON DELETE CASCADE,
     version INT NOT NULL CHECK (version >= 1), 
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), 
     PRIMARY KEY (bid_id, version) 

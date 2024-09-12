@@ -19,13 +19,16 @@ func (h *Handler) CreateBid(c *gin.Context) {
 
 	bid, err := h.srv.CreateBid(c.Request.Context(), createBid)
 	switch {
+	case errors.Is(err, repository.ErrBidUnique):
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{err.Error()})
+		return
 	case errors.Is(err, repository.ErrUserNotExist):
 		c.AbortWithStatusJSON(http.StatusUnauthorized, errorResponse{err.Error()})
 		return
 	case errors.Is(err, repository.ErrRelationNotExist):
 		c.AbortWithStatusJSON(http.StatusForbidden, errorResponse{err.Error()})
 		return
-	case errors.Is(err, repository.ErrTenderNotFound):
+	case errors.Is(err, repository.ErrBidDependencyNotFound):
 		c.AbortWithStatusJSON(http.StatusNotFound, errorResponse{err.Error()})
 		return
 	case err != nil:
@@ -34,7 +37,7 @@ func (h *Handler) CreateBid(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, bid)
+	c.JSON(http.StatusOK, bid)
 }
 
 func (h *Handler) GetMyBids(c *gin.Context) {

@@ -26,6 +26,8 @@ type TenderRepository interface {
 	СheckOrganizationPermission(ctx context.Context, organizationID *models.OrganizationID, username string) error
 	// IsTenderCreatorByName проверяет, является ли пользователь создателем указанного тендера по username
 	IsTenderCreatorByName(ctx context.Context, tenderId, creatorUsername string) error
+	// IsUserResponsible проверяет, имеет ли пользователь права доступа к любой организации
+	IsUserResponsible(ctx context.Context, userId string) error
 	// GetUserIDByName возвращает id пользователя по его имени
 	GetUserIDByName(ctx context.Context, username string) (string, error)
 }

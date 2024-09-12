@@ -7,10 +7,10 @@ import (
 )
 
 func (s *Service) CreateBid(ctx context.Context, bid *models.BidCreate) (*models.BidResponse, error) {
-	// проверяет, является ли пользователь создателем тендер
-	// if err := s.repo.IsTenderCreatorByName(ctx, bid.TenderID, bid.AuthorId); err != nil {
-	// 	return nil, err
-	// }
+	// проверяет, является ли пользователь ответственным за любую организацию
+	if err := s.repo.IsUserResponsible(ctx, bid.AuthorId); err != nil {
+		return nil, err
+	}
 
 	return s.repo.CreateBid(ctx, bid)
 }

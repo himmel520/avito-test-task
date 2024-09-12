@@ -6,6 +6,8 @@ import "errors"
 var (
 	// foreign key violation: 23503
 	FKViolation = "23503"
+	// unique violation: 23505
+	UniqueConstraint = "23505"
 )
 
 // TENDER
@@ -21,4 +23,10 @@ var (
 	ErrTenderNotFound = errors.New("тендер не найден")
 	// ErrTenderORVersionNotFound указывает на отсутствие тендера или версии.
 	ErrTenderORVersionNotFound = errors.New("тендер или версия не найдены")
+)
+
+// BID
+var (
+	ErrBidDependencyNotFound = errors.New("нельзя создать предложение, так как нет тендера или пользователя")
+	ErrBidUnique = errors.New("на один тендер может быть одно предложение от организации")
 )

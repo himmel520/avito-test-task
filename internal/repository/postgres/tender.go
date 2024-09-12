@@ -4,12 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"strings"
 
 	"git.codenrock.com/avito-testirovanie-na-backend-1270/cnrprod1725721384-team-77753/zadanie-6105/internal/repository"
 	"git.codenrock.com/avito-testirovanie-na-backend-1270/cnrprod1725721384-team-77753/zadanie-6105/models"
-	"github.com/jackc/pgconn"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -71,14 +70,11 @@ func (p *Postgres) CreateTender(ctx context.Context, tender *models.TenderCreate
 		&tenderResp.ID, &tenderResp.Name, &tenderResp.Description, &tenderResp.ServiceType,
 		&tenderResp.Status, &tenderResp.OrganizationID, &tenderResp.Version, &tenderResp.CreatedAt, &tenderResp.CreatorUsername)
 
-	if err != nil {
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) {
-			if pgErr.Code == repository.FKViolation {
-				return nil, repository.ErrOrganizationDepencyNotFound
-			}
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) {
+		if pgErr.Code == repository.FKViolation {
+			return nil, repository.ErrOrganizationDepencyNotFound
 		}
-		return nil, fmt.Errorf("failed to insert tender: %w", err)
 	}
 
 	return tenderResp, err
@@ -223,7 +219,6 @@ func (p *Postgres) RollbackTender(ctx context.Context, tenderID string, version 
 		}
 	}()
 
-	log.Println(tenderID)
 	// Добавляем текущую версию в историю
 	pgCmd, err := tx.Exec(ctx, `
 	INSERT INTO tender_version 

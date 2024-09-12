@@ -2,13 +2,36 @@ package postgres
 
 import (
 	"context"
+	"errors"
 
+	"git.codenrock.com/avito-testirovanie-na-backend-1270/cnrprod1725721384-team-77753/zadanie-6105/internal/repository"
 	"git.codenrock.com/avito-testirovanie-na-backend-1270/cnrprod1725721384-team-77753/zadanie-6105/models"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 func (p *Postgres) CreateBid(ctx context.Context, bid *models.BidCreate) (*models.BidResponse, error) {
-	// Реализация создания предложения
-	return nil, nil
+	bidResp := &models.BidResponse{}
+
+	err := p.DB.QueryRow(ctx, `
+	insert into bid 
+		(name, description, tender_id, author_type, author_id)
+	values 
+    	($1, $2, $3, $4, $5) 
+	returning *;`, bid.Name, bid.Description, bid.TenderID, bid.AuthorType, bid.AuthorId).Scan(
+		&bidResp.ID, &bidResp.Name, &bidResp.Description, &bidResp.Status, &bidResp.TenderID,
+		&bidResp.AuthorType, &bidResp.AuthorID, &bidResp.Version, &bidResp.CreatedAt)
+
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) {
+		switch pgErr.Code {
+		case repository.FKViolation:
+			return nil, repository.ErrBidDependencyNotFound
+		case repository.UniqueConstraint:
+			return nil, repository.ErrBidUnique
+		}
+	}
+
+	return bidResp, err
 }
 
 func (p *Postgres) GetUserBids(ctx context.Context, username string, limit, offset int32) ([]*models.BidResponse, error) {

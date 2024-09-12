@@ -94,7 +94,7 @@ func (h *Handler) GetTenderStatus(c *gin.Context) {
 
 	status, err := h.srv.GetTenderStatus(c.Request.Context(), uri.ID, query.Username)
 	switch {
-	case errors.Is(err, repository.ErrTenderNotFound):
+	case errors.Is(err, repository.ErrTenderNotFound) || errors.Is(err, repository.ErrTenderORVersionNotFound):
 		c.AbortWithStatusJSON(http.StatusNotFound, errorResponse{err.Error()})
 		return
 	case errors.Is(err, repository.ErrUserNotExist):
@@ -166,7 +166,7 @@ func (h *Handler) EditTender(c *gin.Context) {
 		return
 	}
 
-	if tenderEdit.IsEmpty(){
+	if tenderEdit.IsEmpty() {
 		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{"изменений нет"})
 		return
 	}
@@ -187,7 +187,7 @@ func (h *Handler) EditTender(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse{err.Error()})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, tender)
 }
 
