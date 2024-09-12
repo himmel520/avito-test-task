@@ -17,4 +17,5 @@ var (
 	ErrPermissionDenied = errors.New("недостаточно прав для выполнения действия")
 
 	ErrOrganizationDepencyNotFound = errors.New("нельзя создать тендер, так как нет организации с таким id")
+	ErrTenderNotFound = errors.New("тендер не найден")
 )

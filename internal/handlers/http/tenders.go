@@ -10,9 +10,22 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// Получение списка тендеров
 func (h *Handler) GetTenders(c *gin.Context) {
-	h.log.Info("GetTenders endpoint called")
-	c.JSON(http.StatusOK, []string{})
+	var query allTenderQuery
+	if err := c.BindQuery(&query); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{fmt.Sprintf("неккоректный query: %v", err)})
+		return
+	}
+
+	tenders, err := h.srv.GetTenders(c.Request.Context(), query.ServiceType, query.Limit, query.Offset)
+	if err != nil {
+		h.log.Error(err)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse{err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, tenders)
 }
 
 // Создание нового тендера
@@ -39,23 +52,101 @@ func (h *Handler) CreateTender(c *gin.Context) {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse{err.Error()})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, tender)
 }
 
+// Получить тендеры пользователя
 func (h *Handler) GetMyTenders(c *gin.Context) {
-	h.log.Info("GetMyTenders endpoint called")
-	c.JSON(http.StatusOK, []string{})
+	var query myTenderQuery
+	if err := c.BindQuery(&query); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{fmt.Sprintf("неккоректный query: %v", err)})
+		return
+	}
+
+	tenders, err := h.srv.GetUserTenders(c.Request.Context(), query.Username, query.Limit, query.Offset)
+	switch {
+	case errors.Is(err, repository.ErrUserNotExist):
+		c.AbortWithStatusJSON(http.StatusUnauthorized, errorResponse{err.Error()})
+		return
+	case err != nil:
+		h.log.Error(err)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse{err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, tenders)
 }
 
+// Получение текущего статуса тендера
 func (h *Handler) GetTenderStatus(c *gin.Context) {
-	h.log.Info("GetTenderStatus endpoint called")
-	c.JSON(http.StatusOK, gin.H{"status": "status"})
+	var uri tenderIdURI
+	if err := c.BindUri(&uri); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{fmt.Sprintf("неккоректный uri: %v", err)})
+		return
+	}
+
+	var query usernameQuery
+	if err := c.BindQuery(&query); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{fmt.Sprintf("неккоректный query: %v", err)})
+		return
+	}
+
+	status, err := h.srv.GetTenderStatus(c.Request.Context(), uri.ID, query.Username)
+	switch {
+	case errors.Is(err, repository.ErrTenderNotFound):
+		c.AbortWithStatusJSON(http.StatusNotFound, errorResponse{err.Error()})
+		return
+	case errors.Is(err, repository.ErrUserNotExist):
+		c.AbortWithStatusJSON(http.StatusUnauthorized, errorResponse{err.Error()})
+		return
+	case errors.Is(err, repository.ErrRelationNotExist):
+		c.AbortWithStatusJSON(http.StatusForbidden, errorResponse{err.Error()})
+		return
+	case errors.Is(err, repository.ErrOrganizationDepencyNotFound):
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{err.Error()})
+		return
+	case err != nil:
+		h.log.Error(err)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse{err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, status)
 }
 
+// Изменение статуса тендера
 func (h *Handler) UpdateTenderStatus(c *gin.Context) {
-	h.log.Info("UpdateTenderStatus endpoint called")
-	c.JSON(http.StatusOK, gin.H{"message": "Tender status updated"})
+	var uri tenderIdURI
+	if err := c.BindUri(&uri); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{fmt.Sprintf("неккоректный uri: %v", err)})
+		return
+	}
+
+	var query editTenderQuery
+	if err := c.BindQuery(&query); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{fmt.Sprintf("неккоректный query: %v", err)})
+		return
+	}
+
+	tender, err := h.srv.UpdateTenderStatus(c.Request.Context(), uri.ID, query.Username, query.Status)
+	switch {
+	case errors.Is(err, repository.ErrUserNotExist):
+		c.AbortWithStatusJSON(http.StatusUnauthorized, errorResponse{err.Error()})
+		return
+	case errors.Is(err, repository.ErrRelationNotExist):
+		c.AbortWithStatusJSON(http.StatusForbidden, errorResponse{err.Error()})
+		return
+	case errors.Is(err, repository.ErrTenderNotFound):
+		c.AbortWithStatusJSON(http.StatusNotFound, errorResponse{err.Error()})
+		return
+	case err != nil:
+		h.log.Error(err)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse{err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, tender)
 }
 
 func (h *Handler) EditTender(c *gin.Context) {

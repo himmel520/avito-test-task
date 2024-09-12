@@ -13,28 +13,50 @@ func (s *Service) GetTenders(ctx context.Context, serviceType []models.TenderSer
 
 // CreateTender создает новый тендер
 func (s *Service) CreateTender(ctx context.Context, tender *models.TenderCreate) (*models.TenderResponse, error) {
-	// Тендеры могут создавать только пользователи от имени своей организации
-	if err := s.repo.СheckOrganizationPermission(ctx, tender.OrganizationID, tender.CreatorUsername); err != nil {
-		// пользователь не имеет доступ
+	// проверка прав
+	employeeId, err := s.repo.СheckOrganizationPermission(ctx, &tender.OrganizationID, tender.CreatorUsername)
+	if err != nil {
+		// пользователь не имеет доступа
 		return nil, err
 	}
 
-	// пользователь имеет доступ
-	return s.repo.CreateTender(ctx, tender)
+	return s.repo.CreateTender(ctx, tender, employeeId)
 }
 
 // GetUserTenders возвращает тендеры пользователя
 func (s *Service) GetUserTenders(ctx context.Context, username string, limit, offset int32) ([]*models.TenderResponse, error) {
-	return s.repo.GetUserTenders(ctx, username, limit, offset)
+	// проверка существования юзера
+	userId, err := s.repo.GetUserIDByName(ctx, username)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.repo.GetUserTenders(ctx, userId, limit, offset)
 }
 
 // GetTenderStatus возвращает статус тендера
-func (s *Service) GetTenderStatus(ctx context.Context, tenderID string) (*models.TenderStatus, error) {
-	return s.repo.GetTenderStatus(ctx, tenderID)
+func (s *Service) GetTenderStatus(ctx context.Context, tenderID, username string) (*models.TenderStatus, error) {
+	// получить статус и id организации
+	status, organizationID, err := s.repo.GetTenderStatus(ctx, tenderID)
+	if err != nil {
+		return nil, err
+	}
+
+	// проверка прав
+	if _, err := s.repo.СheckOrganizationPermission(ctx, organizationID, username); err != nil {
+		return nil, err
+	}
+
+	return status, nil
 }
 
 // UpdateTenderStatus обновляет статус тендера
-func (s *Service) UpdateTenderStatus(ctx context.Context, tenderID string, status models.TenderStatus) (*models.TenderResponse, error) {
+func (s *Service) UpdateTenderStatus(ctx context.Context, tenderID, username string, status models.TenderStatus) (*models.TenderResponse, error) {
+	// проверка прав
+	if err := s.repo.IsTenderCreator(ctx, tenderID, username); err != nil {
+		return nil, err
+	}
+	
 	return s.repo.UpdateTenderStatus(ctx, tenderID, status)
 }
 

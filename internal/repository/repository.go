@@ -8,14 +8,16 @@ import (
 
 type TenderRepository interface {
 	GetTenders(ctx context.Context, serviceType []models.TenderServiceType, limit, offset int32) ([]*models.TenderResponse, error)
-	CreateTender(ctx context.Context, tender *models.TenderCreate) (*models.TenderResponse, error)
+	CreateTender(ctx context.Context, tender *models.TenderCreate, employeeId string) (*models.TenderResponse, error)
 	GetUserTenders(ctx context.Context, username string, limit, offset int32) ([]*models.TenderResponse, error)
-	GetTenderStatus(ctx context.Context, tenderID string) (*models.TenderStatus, error)
+	GetTenderStatus(ctx context.Context, tenderID string) (*models.TenderStatus, *models.OrganizationID, error)
 	UpdateTenderStatus(ctx context.Context, tenderID string, status models.TenderStatus) (*models.TenderResponse, error)
 	UpdateTender(ctx context.Context, tender models.TenderEdit) (*models.TenderResponse, error)
 	RollbackTender(ctx context.Context, tenderID string, version int32) (*models.TenderResponse, error)
 
-	СheckOrganizationPermission(ctx context.Context, organizationID, username string) error
+	СheckOrganizationPermission(ctx context.Context, organizationID *models.OrganizationID, username string) (string, error)
+	IsTenderCreator(ctx context.Context, tenderId, username string) error
+	GetUserIDByName(ctx context.Context, username string) (string, error)
 }
 
 type BidRepository interface {

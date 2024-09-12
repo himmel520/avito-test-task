@@ -20,6 +20,9 @@ const (
 	TenderServiceTypeManufacture  TenderServiceType = "Manufacture"
 )
 
+// OrganizationID представляет id организации
+type OrganizationID string
+
 // TenderResponse представляет информацию о тендере
 type TenderResponse struct {
 	ID             string            `json:"id"`
@@ -27,7 +30,7 @@ type TenderResponse struct {
 	Description    string            `json:"description"`
 	ServiceType    TenderServiceType `json:"serviceType"`
 	Status         TenderStatus      `json:"status"`
-	OrganizationID string            `json:"organizationId"`
+	OrganizationID OrganizationID    `json:"organizationId"`
 	Version        int               `json:"version"`
 	CreatedAt      time.Time         `json:"createdAt"`
 }
@@ -37,7 +40,7 @@ type TenderCreate struct {
 	Name            string            `json:"name" binding:"required,max=100"`
 	Description     string            `json:"description" binding:"required,max=500"`
 	ServiceType     TenderServiceType `json:"serviceType" binding:"required,oneof=Construction Delivery Manufacture"`
-	OrganizationID  string            `json:"organizationId" binding:"required,max=100,uuid"`
+	OrganizationID  OrganizationID    `json:"organizationId" binding:"required,max=100,uuid"`
 	CreatorUsername string            `json:"creatorUsername" binding:"required,max=50"`
 }
 

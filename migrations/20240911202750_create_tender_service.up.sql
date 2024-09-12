@@ -1,4 +1,4 @@
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION "uuid-ossp";
 
 -- BASE таблицы
 CREATE TABLE IF NOT EXISTS employee (
@@ -57,6 +57,12 @@ CREATE TABLE IF NOT EXISTS tender (
     organization_id UUID NOT NULL REFERENCES organization(id) ON DELETE CASCADE,
     version INT DEFAULT 1 CHECK (version >= 1),
     created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS tender_creator (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    creator_id UUID NOT NULL REFERENCES employee(id) ON DELETE CASCADE,
+    tender_id UUID NOT NULL REFERENCES tender(id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS tender_version (
