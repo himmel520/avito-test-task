@@ -1,14 +1,40 @@
 package httphandler
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
 
+	"git.codenrock.com/avito-testirovanie-na-backend-1270/cnrprod1725721384-team-77753/zadanie-6105/internal/repository"
+	"git.codenrock.com/avito-testirovanie-na-backend-1270/cnrprod1725721384-team-77753/zadanie-6105/models"
 	"github.com/gin-gonic/gin"
 )
 
 func (h *Handler) CreateBid(c *gin.Context) {
-	h.log.Info("CreateBid endpoint called")
-	c.JSON(http.StatusCreated, gin.H{"message": "Bid created"})
+	var createBid *models.BidCreate
+	if err := c.BindJSON(&createBid); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{fmt.Sprintf("ошибка в теле запроса: %v", err)})
+		return
+	}
+
+	bid, err := h.srv.CreateBid(c.Request.Context(), createBid)
+	switch {
+	case errors.Is(err, repository.ErrUserNotExist):
+		c.AbortWithStatusJSON(http.StatusUnauthorized, errorResponse{err.Error()})
+		return
+	case errors.Is(err, repository.ErrRelationNotExist):
+		c.AbortWithStatusJSON(http.StatusForbidden, errorResponse{err.Error()})
+		return
+	case errors.Is(err, repository.ErrTenderNotFound):
+		c.AbortWithStatusJSON(http.StatusNotFound, errorResponse{err.Error()})
+		return
+	case err != nil:
+		h.log.Error(err)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse{err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, bid)
 }
 
 func (h *Handler) GetMyBids(c *gin.Context) {

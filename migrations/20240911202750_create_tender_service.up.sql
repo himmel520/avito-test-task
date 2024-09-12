@@ -56,13 +56,8 @@ CREATE TABLE IF NOT EXISTS tender (
     status tender_status DEFAULT 'Created',
     organization_id UUID NOT NULL REFERENCES organization(id) ON DELETE CASCADE,
     version INT DEFAULT 1 CHECK (version >= 1),
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE TABLE IF NOT EXISTS tender_creator (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    creator_id UUID NOT NULL REFERENCES employee(id) ON DELETE CASCADE,
-    tender_id UUID NOT NULL REFERENCES tender(id) ON DELETE CASCADE
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    creator_username VARCHAR(50) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS tender_version (
@@ -74,6 +69,7 @@ CREATE TABLE IF NOT EXISTS tender_version (
     organization_id UUID NOT NULL REFERENCES organization(id) ON DELETE CASCADE,
     version INT DEFAULT 1 CHECK (version >= 1),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), 
+    creator_username VARCHAR(50) NOT NULL,
     PRIMARY KEY (tender_id, version) 
 );
 

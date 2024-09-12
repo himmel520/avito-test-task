@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 
 	"git.codenrock.com/avito-testirovanie-na-backend-1270/cnrprod1725721384-team-77753/zadanie-6105/internal/repository"
@@ -58,29 +59,17 @@ func (p *Postgres) GetTenders(ctx context.Context, serviceType []models.TenderSe
 	return tenders, nil
 }
 
-// CreateTender создает новый тендер и связывает его с сотрудником
-func (p *Postgres) CreateTender(ctx context.Context, tender *models.TenderCreate, employeeId string) (*models.TenderResponse, error) {
-	tx, err := p.DB.Begin(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to begin transaction: %w", err)
-	}
-
-	defer func() {
-		if err != nil {
-			tx.Rollback(ctx)
-		} else {
-			err = tx.Commit(ctx)
-		}
-	}()
-
+// CreateTender создает новый тендер
+func (p *Postgres) CreateTender(ctx context.Context, tender *models.TenderCreate) (*models.TenderResponse, error) {
 	tenderResp := &models.TenderResponse{}
-	err = tx.QueryRow(ctx, `
+
+	err := p.DB.QueryRow(ctx, `
 	insert into tender 
-		(name, description, service_type, organization_id) 
-	values ($1, $2, $3, $4) returning *;`,
-		tender.Name, tender.Description, tender.ServiceType, tender.OrganizationID).Scan(
-		&tenderResp.ID, &tenderResp.Name, &tenderResp.Description,
-		&tenderResp.ServiceType, &tenderResp.Status, &tenderResp.OrganizationID, &tenderResp.Version, &tenderResp.CreatedAt)
+		(name, description, service_type, organization_id, creator_username) 
+	values ($1, $2, $3, $4, $5) returning *;`,
+		tender.Name, tender.Description, tender.ServiceType, tender.OrganizationID, tender.CreatorUsername).Scan(
+		&tenderResp.ID, &tenderResp.Name, &tenderResp.Description, &tenderResp.ServiceType,
+		&tenderResp.Status, &tenderResp.OrganizationID, &tenderResp.Version, &tenderResp.CreatedAt, &tenderResp.CreatorUsername)
 
 	if err != nil {
 		var pgErr *pgconn.PgError
@@ -92,26 +81,17 @@ func (p *Postgres) CreateTender(ctx context.Context, tender *models.TenderCreate
 		return nil, fmt.Errorf("failed to insert tender: %w", err)
 	}
 
-	_, err = tx.Exec(ctx, `
-	insert into tender_creator 
-		(creator_id, tender_id) 
-	values ($1, $2)`, employeeId, tenderResp.ID)
-
 	return tenderResp, err
 }
 
 // GetUserTenders возвращает список тендеров, созданных конкретным пользователем
-func (p *Postgres) GetUserTenders(ctx context.Context, userId string, limit, offset int32) ([]*models.TenderResponse, error) {
+func (p *Postgres) GetUserTenders(ctx context.Context, username string, limit, offset int32) ([]*models.TenderResponse, error) {
 	rows, err := p.DB.Query(ctx, `
-	SELECT 
-		t.*
-	FROM tender t
-	JOIN tender_creator tc ON t.id = tc.tender_id
-	WHERE 
-		tc.creator_id = $3  
-	ORDER BY t.name ASC  
-	LIMIT $1  
-	OFFSET $2; `, limit, offset, userId)
+	SELECT *
+	FROM tender
+		WHERE creator_username = $1
+	ORDER BY name ASC
+	LIMIT $2 OFFSET $3;`, username, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +102,7 @@ func (p *Postgres) GetUserTenders(ctx context.Context, userId string, limit, off
 		tender := &models.TenderResponse{}
 		if err := rows.Scan(
 			&tender.ID, &tender.Name, &tender.Description, &tender.ServiceType, &tender.Status,
-			&tender.OrganizationID, &tender.Version, &tender.CreatedAt); err != nil {
+			&tender.OrganizationID, &tender.Version, &tender.CreatedAt, &tender.CreatorUsername); err != nil {
 			return nil, err
 		}
 
@@ -159,7 +139,7 @@ func (p *Postgres) UpdateTenderStatus(ctx context.Context, tenderID string, stat
 	WHERE id = $1
 	returning *;`, tenderID, status).Scan(
 		&tender.ID, &tender.Name, &tender.Description, &tender.ServiceType, &tender.Status,
-		&tender.OrganizationID, &tender.Version, &tender.CreatedAt)
+		&tender.OrganizationID, &tender.Version, &tender.CreatedAt, &tender.CreatorUsername)
 
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, repository.ErrTenderNotFound
@@ -186,15 +166,15 @@ func (p *Postgres) UpdateTender(ctx context.Context, tenderID string, tenderEdit
 	// Добавляем текущую версию в историю
 	pgCmd, err := tx.Exec(ctx, `
 	INSERT INTO tender_version 
-		(tender_id, name, description, service_type, status, organization_id, version, created_at) 
+		(tender_id, name, description, service_type, status, organization_id, version, created_at, creator_username) 
 	SELECT
-    	id, name, description, service_type, status, organization_id, version, created_at
+    	id, name, description, service_type, status, organization_id, version, created_at, creator_username
 	FROM tender
 	WHERE id = $1;`, tenderID)
 	if pgCmd.RowsAffected() == 0 {
 		return nil, repository.ErrTenderNotFound
 	}
-	
+
 	// Обновление тендера в основной таблице и его возврат с обновленной версией
 	var keys []string
 	var values []interface{}
@@ -220,7 +200,7 @@ func (p *Postgres) UpdateTender(ctx context.Context, tenderID string, tenderEdit
 	tender := &models.TenderResponse{}
 	err = tx.QueryRow(ctx, query, values...).Scan(
 		&tender.ID, &tender.Name, &tender.Description, &tender.ServiceType, &tender.Status,
-		&tender.OrganizationID, &tender.Version, &tender.CreatedAt)
+		&tender.OrganizationID, &tender.Version, &tender.CreatedAt, &tender.CreatorUsername)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, repository.ErrTenderNotFound
 	}
@@ -243,12 +223,13 @@ func (p *Postgres) RollbackTender(ctx context.Context, tenderID string, version 
 		}
 	}()
 
-	// Добавить текущую версию в историю
+	log.Println(tenderID)
+	// Добавляем текущую версию в историю
 	pgCmd, err := tx.Exec(ctx, `
 	INSERT INTO tender_version 
-		(tender_id, name, description, service_type, status, organization_id, version, created_at) 
+		(tender_id, name, description, service_type, status, organization_id, version, created_at, creator_username) 
 	SELECT
-    	id, name, description, service_type, status, organization_id, version, created_at
+    	id, name, description, service_type, status, organization_id, version, created_at, creator_username
 	FROM tender
 	WHERE id = $1;`, tenderID)
 	if pgCmd.RowsAffected() == 0 {
@@ -260,9 +241,9 @@ func (p *Postgres) RollbackTender(ctx context.Context, tenderID string, version 
 	err = tx.QueryRow(ctx, `
 	with tv as (
 		select
-			name, description, service_type, status, organization_id, version, created_at
+			name, description, service_type, status, organization_id, version, created_at, creator_username
 		from tender_version
-			where tender_id = $2 and version = $3
+			where tender_id = $1 and version = $2
 	)
 	update tender t
 	set
@@ -272,85 +253,16 @@ func (p *Postgres) RollbackTender(ctx context.Context, tenderID string, version 
 		status = tv.status,
 		organization_id = tv.organization_id,
 		version = t.version + 1,
-		created_at = tv.created_at
+		created_at = tv.created_at,
+		creator_username = tv.creator_username
 	from tv
 		where t.id = $1 
-	returning t.*;`, tenderID, tenderID, version).Scan(
+	returning t.*;`, tenderID, version).Scan(
 		&tender.ID, &tender.Name, &tender.Description, &tender.ServiceType, &tender.Status,
-		&tender.OrganizationID, &tender.Version, &tender.CreatedAt)
+		&tender.OrganizationID, &tender.Version, &tender.CreatedAt, &tender.CreatorUsername)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, repository.ErrTenderORVersionNotFound
 	}
 
 	return tender, err
-}
-
-// СheckOrganizationPermission проверяет, имеет ли пользователь права доступа к организации и возвращает его id
-func (p *Postgres) СheckOrganizationPermission(ctx context.Context, organizationID *models.OrganizationID, username string) (string, error) {
-	var existsRelation bool
-	var creatorId string
-
-	err := p.DB.QueryRow(ctx, `
-	SELECT
-		e.id AS user_id,
-		EXISTS (
-			SELECT 1
-			FROM organization_responsible
-			WHERE user_id = e.id
-			AND organization_id = $2
-		) AS exists_relation
-	FROM employee e
-	WHERE username = $1;`, username, organizationID).Scan(&creatorId, &existsRelation)
-
-	switch {
-	// пользователь не существует или некорректен.
-	case errors.Is(err, pgx.ErrNoRows):
-		return "", repository.ErrUserNotExist
-	// нет связи пользователь и организация
-	case !existsRelation:
-		return "", repository.ErrRelationNotExist
-	}
-
-	return creatorId, err
-}
-
-// IsTenderCreator проверяет, является ли пользователь создателем указанного тендера
-func (p *Postgres) IsTenderCreator(ctx context.Context, tenderId, username string) error {
-	var isCreator bool
-
-	err := p.DB.QueryRow(ctx, `
-    SELECT EXISTS (
-		SELECT 1
-		FROM tender_creator tc
-		WHERE tc.creator_id = e.id AND tc.tender_id = $2
-	) AS is_creator
-	FROM employee e
-	WHERE e.username = $1;`, username, tenderId).Scan(&isCreator)
-
-	switch {
-	// пользователь не существует или некорректен.
-	case errors.Is(err, pgx.ErrNoRows):
-		return repository.ErrUserNotExist
-	// нет связи пользователь и тендер
-	case !isCreator:
-		return repository.ErrRelationNotExist
-	}
-
-	return err
-}
-
-// GetUserIDByName возвращает id пользователя по его имени
-func (p *Postgres) GetUserIDByName(ctx context.Context, username string) (string, error) {
-	var userId string
-	err := p.DB.QueryRow(ctx, `
-	select 
-		id 
-	from employee e 
-	where e.username = $1;
-	`, username).Scan(&userId)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return "", repository.ErrUserNotExist
-	}
-
-	return userId, err
 }

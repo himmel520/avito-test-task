@@ -16,7 +16,7 @@ func New(cfg *config.PGConfig) (*Postgres, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	
 	if err := pool.Ping(context.Background()); err != nil {
 		return nil, err
 	}

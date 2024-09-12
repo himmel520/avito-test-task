@@ -9,8 +9,8 @@ import (
 type TenderRepository interface {
 	// GetTenders возвращает список тендеров с заданными фильтрами и пагинацией
 	GetTenders(ctx context.Context, serviceType []models.TenderServiceType, limit, offset int32) ([]*models.TenderResponse, error)
-	// CreateTender создает новый тендер и связывает его с сотрудником
-	CreateTender(ctx context.Context, tender *models.TenderCreate, employeeId string) (*models.TenderResponse, error)
+	// CreateTender создает новый тендер
+	CreateTender(ctx context.Context, tender *models.TenderCreate) (*models.TenderResponse, error)
 	// GetUserTenders возвращает список тендеров, созданных конкретным пользователем
 	GetUserTenders(ctx context.Context, username string, limit, offset int32) ([]*models.TenderResponse, error)
 	// GetTenderStatus возвращает статус и организацию для указанного тендера
@@ -23,9 +23,9 @@ type TenderRepository interface {
 	RollbackTender(ctx context.Context, tenderID string, version int32) (*models.TenderResponse, error)
 
 	// СheckOrganizationPermission проверяет, имеет ли пользователь права доступа к организации
-	СheckOrganizationPermission(ctx context.Context, organizationID *models.OrganizationID, username string) (string, error)
-	// IsTenderCreator проверяет, является ли пользователь создателем указанного тендера
-	IsTenderCreator(ctx context.Context, tenderId, username string) error
+	СheckOrganizationPermission(ctx context.Context, organizationID *models.OrganizationID, username string) error
+	// IsTenderCreatorByName проверяет, является ли пользователь создателем указанного тендера по username
+	IsTenderCreatorByName(ctx context.Context, tenderId, creatorUsername string) error
 	// GetUserIDByName возвращает id пользователя по его имени
 	GetUserIDByName(ctx context.Context, username string) (string, error)
 }

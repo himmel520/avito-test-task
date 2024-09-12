@@ -27,14 +27,15 @@ type OrganizationID string
 
 // TenderResponse представляет информацию о тендере
 type TenderResponse struct {
-	ID             string            `json:"id"`
-	Name           string            `json:"name"`
-	Description    string            `json:"description"`
-	ServiceType    TenderServiceType `json:"serviceType"`
-	Status         TenderStatus      `json:"status"`
-	OrganizationID OrganizationID    `json:"organizationId"`
-	Version        int               `json:"version"`
-	CreatedAt      time.Time         `json:"createdAt"`
+	ID              string            `json:"id"`
+	Name            string            `json:"name"`
+	Description     string            `json:"description"`
+	ServiceType     TenderServiceType `json:"serviceType"`
+	Status          TenderStatus      `json:"status"`
+	OrganizationID  OrganizationID    `json:"organizationId"`
+	Version         int               `json:"version"`
+	CreatedAt       time.Time         `json:"createdAt"`
+	CreatorUsername string            `json:"-"`
 }
 
 // TenderCreate представляет данные для создания нового тендера
