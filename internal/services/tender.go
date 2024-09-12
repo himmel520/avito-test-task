@@ -61,8 +61,13 @@ func (s *Service) UpdateTenderStatus(ctx context.Context, tenderID, username str
 }
 
 // EditTender редактирует существующий тендер
-func (s *Service) EditTender(ctx context.Context, tenderID string, username string, tender models.TenderEdit) (*models.TenderResponse, error) {
-	return s.repo.UpdateTender(ctx, tender)
+func (s *Service) EditTender(ctx context.Context, tenderID string, username string, tender *models.TenderEdit) (*models.TenderResponse, error) {
+	// проверка прав
+	if err := s.repo.IsTenderCreator(ctx, tenderID, username); err != nil {
+		return nil, err
+	}
+
+	return s.repo.UpdateTender(ctx, tenderID ,tender)
 }
 
 // RollbackTender откатывает тендер к указанной версии

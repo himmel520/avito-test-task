@@ -153,8 +153,8 @@ func (p *Postgres) UpdateTenderStatus(ctx context.Context, tenderID string, stat
 	SET status = $2::tender_status
 	WHERE id = $1
 	returning *;`, tenderID, status).Scan(
-		    &tender.ID, &tender.Name, &tender.Description, &tender.ServiceType, &tender.Status,
-			&tender.OrganizationID, &tender.Version, &tender.CreatedAt)
+		&tender.ID, &tender.Name, &tender.Description, &tender.ServiceType, &tender.Status,
+		&tender.OrganizationID, &tender.Version, &tender.CreatedAt)
 
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, repository.ErrTenderNotFound
@@ -163,9 +163,63 @@ func (p *Postgres) UpdateTenderStatus(ctx context.Context, tenderID string, stat
 	return tender, err
 }
 
-func (p *Postgres) UpdateTender(ctx context.Context, tender models.TenderEdit) (*models.TenderResponse, error) {
-	// Реализация обновления тендера
-	return nil, nil
+func (p *Postgres) UpdateTender(ctx context.Context, tenderID string, tenderEdit *models.TenderEdit) (*models.TenderResponse, error) {
+	tx, err := p.DB.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+
+	defer func() {
+		if err != nil {
+			tx.Rollback(ctx)
+		} else {
+			err = tx.Commit(ctx)
+		}
+	}()
+
+	// Добавляем текущую версию в историю
+	pgCmd, err := tx.Exec(ctx, `
+	INSERT INTO tender_version 
+		(tender_id, name, description, service_type, status, organization_id, version, created_at) 
+	SELECT
+    	id, name, description, service_type, status, organization_id, version, created_at
+	FROM tender
+	WHERE id = $1;`, tenderID)
+	if pgCmd.RowsAffected() == 0 {
+		return nil, repository.ErrTenderNotFound
+	}
+	
+	// Обновление тендера в основной таблице и его возврат с обновленной версией
+	var keys []string
+	var values []interface{}
+
+	if tenderEdit.Name != nil {
+		keys = append(keys, "name=$1")
+		values = append(values, tenderEdit.Name)
+	}
+
+	if tenderEdit.Description != nil {
+		keys = append(keys, fmt.Sprintf("description=$%d", len(values)+1))
+		values = append(values, tenderEdit.Description)
+	}
+
+	if tenderEdit.ServiceType != nil {
+		keys = append(keys, fmt.Sprintf("service_type=$%d::service_type", len(values)+1))
+		values = append(values, tenderEdit.ServiceType)
+	}
+
+	values = append(values, tenderID)
+	query := fmt.Sprintf(`update tender set %s, version = version + 1 where id = $%v returning *;`, strings.Join(keys, ", "), len(values))
+
+	tender := &models.TenderResponse{}
+	err = tx.QueryRow(ctx, query, values...).Scan(
+		&tender.ID, &tender.Name, &tender.Description, &tender.ServiceType, &tender.Status,
+		&tender.OrganizationID, &tender.Version, &tender.CreatedAt)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, repository.ErrTenderNotFound
+	}
+
+	return tender, err
 }
 
 func (p *Postgres) RollbackTender(ctx context.Context, tenderID string, version int32) (*models.TenderResponse, error) {

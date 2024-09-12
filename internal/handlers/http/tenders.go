@@ -149,11 +149,52 @@ func (h *Handler) UpdateTenderStatus(c *gin.Context) {
 	c.JSON(http.StatusOK, tender)
 }
 
+// Редактирование тендера
 func (h *Handler) EditTender(c *gin.Context) {
-	h.log.Info("EditTender endpoint called")
-	c.JSON(http.StatusOK, gin.H{"message": "Tender edited"})
+	var uri tenderIdURI
+	if err := c.BindUri(&uri); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{fmt.Sprintf("неккоректный uri: %v", err)})
+		return
+	}
+
+	var query usernameQuery
+	if err := c.BindQuery(&query); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{fmt.Sprintf("неккоректный query: %v", err)})
+		return
+	}
+
+	var tenderEdit *models.TenderEdit
+	if err := c.BindJSON(&tenderEdit); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{fmt.Sprintf("ошибка в теле запроса: %v", err)})
+		return
+	}
+
+	if tenderEdit.IsEmpty(){
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{"изменений нет"})
+		return
+	}
+
+	tender, err := h.srv.EditTender(c.Request.Context(), uri.ID, query.Username, tenderEdit)
+	switch {
+	case errors.Is(err, repository.ErrUserNotExist):
+		c.AbortWithStatusJSON(http.StatusUnauthorized, errorResponse{err.Error()})
+		return
+	case errors.Is(err, repository.ErrRelationNotExist):
+		c.AbortWithStatusJSON(http.StatusForbidden, errorResponse{err.Error()})
+		return
+	case errors.Is(err, repository.ErrTenderNotFound):
+		c.AbortWithStatusJSON(http.StatusNotFound, errorResponse{err.Error()})
+		return
+	case err != nil:
+		h.log.Error(err)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse{err.Error()})
+		return
+	}
+	
+	c.JSON(http.StatusOK, tender)
 }
 
+// Откат версии тендера
 func (h *Handler) RollbackTenderVersion(c *gin.Context) {
 	h.log.Info("RollbackTenderVersion endpoint called")
 	c.JSON(http.StatusOK, gin.H{"message": "Tender version rolled back"})

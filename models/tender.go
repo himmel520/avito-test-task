@@ -1,6 +1,8 @@
 package models
 
-import "time"
+import (
+	"time"
+)
 
 // TenderStatus представляет статус тендера
 type TenderStatus string
@@ -49,4 +51,8 @@ type TenderEdit struct {
 	Name        *string            `json:"name" binding:"omitempty,max=100"`
 	Description *string            `json:"description" binding:"omitempty,max=500"`
 	ServiceType *TenderServiceType `json:"serviceType" binding:"omitempty,oneof=Construction Delivery Manufacture"`
+}
+
+func (t *TenderEdit) IsEmpty() bool {
+	return t.Name == nil && t.Description == nil && t.ServiceType == nil
 }

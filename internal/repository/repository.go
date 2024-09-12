@@ -12,7 +12,7 @@ type TenderRepository interface {
 	GetUserTenders(ctx context.Context, username string, limit, offset int32) ([]*models.TenderResponse, error)
 	GetTenderStatus(ctx context.Context, tenderID string) (*models.TenderStatus, *models.OrganizationID, error)
 	UpdateTenderStatus(ctx context.Context, tenderID string, status models.TenderStatus) (*models.TenderResponse, error)
-	UpdateTender(ctx context.Context, tender models.TenderEdit) (*models.TenderResponse, error)
+	UpdateTender(ctx context.Context, tenderID string, tenderEdit *models.TenderEdit) (*models.TenderResponse, error)
 	RollbackTender(ctx context.Context, tenderID string, version int32) (*models.TenderResponse, error)
 
 	СheckOrganizationPermission(ctx context.Context, organizationID *models.OrganizationID, username string) (string, error)
