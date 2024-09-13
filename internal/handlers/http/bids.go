@@ -19,7 +19,7 @@ func (h *Handler) CreateBid(c *gin.Context) {
 
 	bid, err := h.srv.CreateBid(c.Request.Context(), createBid)
 	switch {
-	case errors.Is(err, repository.ErrBidUnique):
+	case errors.Is(err, repository.ErrBidUnique) || errors.Is(err, repository.ErrTenderClosed):
 		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{err.Error()})
 		return
 	case errors.Is(err, repository.ErrUserNotExist):
@@ -41,13 +41,57 @@ func (h *Handler) CreateBid(c *gin.Context) {
 }
 
 func (h *Handler) GetMyBids(c *gin.Context) {
-	h.log.Info("GetMyBids endpoint called")
-	c.JSON(http.StatusOK, []string{})
+	var query myQuery
+	if err := c.BindQuery(&query); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{fmt.Sprintf("неккоректный query: %v", err)})
+		return
+	}
+
+	bids, err := h.srv.GetUserBids(c.Request.Context(), query.Username, query.Limit, query.Offset)
+	switch {
+	case errors.Is(err, repository.ErrUserNotExist):
+		c.AbortWithStatusJSON(http.StatusUnauthorized, errorResponse{err.Error()})
+		return
+	case err != nil:
+		h.log.Error(err)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse{err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, bids)
 }
 
 func (h *Handler) GetBidsForTender(c *gin.Context) {
-	h.log.Info("GetBidsForTender endpoint called")
-	c.JSON(http.StatusOK, []string{})
+	var uri bidTenderIdURI
+	if err := c.BindUri(&uri); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{fmt.Sprintf("неккоректный uri: %v", err)})
+		return
+	}
+
+	var query myQuery
+	if err := c.BindQuery(&query); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{fmt.Sprintf("неккоректный query: %v", err)})
+		return
+	}
+
+	bids, err := h.srv.GetBidsForTender(c.Request.Context(), uri.ID, query.Username, query.Limit, query.Offset)
+	switch {
+	case errors.Is(err, repository.ErrUserNotExist):
+		c.AbortWithStatusJSON(http.StatusUnauthorized, errorResponse{err.Error()})
+		return
+	case errors.Is(err, repository.ErrRelationNotExist):
+		c.AbortWithStatusJSON(http.StatusForbidden, errorResponse{err.Error()})
+		return
+	case errors.Is(err, repository.ErrBidTenderNotFound):
+		c.AbortWithStatusJSON(http.StatusNotFound, errorResponse{err.Error()})
+		return
+	case err != nil:
+		h.log.Error(err)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse{err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, bids)
 }
 
 func (h *Handler) GetBidStatus(c *gin.Context) {

@@ -30,12 +30,13 @@ type TenderRepository interface {
 	IsUserResponsible(ctx context.Context, userId string) error
 	// GetUserIDByName возвращает id пользователя по его имени
 	GetUserIDByName(ctx context.Context, username string) (string, error)
+	IsTenderPudlished(ctx context.Context, tenderID string) error
 }
 
 type BidRepository interface {
 	CreateBid(ctx context.Context, bid *models.BidCreate) (*models.BidResponse, error)
-	GetUserBids(ctx context.Context, username string, limit, offset int32) ([]*models.BidResponse, error)
-	GetBidsForTender(ctx context.Context, tenderID, username string, limit, offset int32) ([]*models.BidResponse, error)
+	GetUserBids(ctx context.Context, userID string, limit, offset int32) ([]*models.BidResponse, error)
+	GetBidsForTender(ctx context.Context, tenderID string, limit, offset int32) ([]*models.BidResponse, error)
 	GetBidStatus(ctx context.Context, bidID string, username string) (*models.BidStatus, error)
 	UpdateBidStatus(ctx context.Context, bidID, username string, status *models.BidStatus) (*models.BidResponse, error)
 	EditBid(ctx context.Context, bidID, username string, bid *models.BidEdit) (*models.BidResponse, error)

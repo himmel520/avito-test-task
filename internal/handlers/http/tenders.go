@@ -3,6 +3,7 @@ package httphandler
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 
 	"git.codenrock.com/avito-testirovanie-na-backend-1270/cnrprod1725721384-team-77753/zadanie-6105/internal/repository"
@@ -38,15 +39,16 @@ func (h *Handler) CreateTender(c *gin.Context) {
 
 	tender, err := h.srv.CreateTender(c.Request.Context(), createTender)
 	switch {
+	case errors.Is(err, repository.ErrOrganizationDepencyNotFound):
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{err.Error()})
+		return
 	case errors.Is(err, repository.ErrUserNotExist):
 		c.AbortWithStatusJSON(http.StatusUnauthorized, errorResponse{err.Error()})
 		return
 	case errors.Is(err, repository.ErrRelationNotExist):
 		c.AbortWithStatusJSON(http.StatusForbidden, errorResponse{err.Error()})
 		return
-	case errors.Is(err, repository.ErrOrganizationDepencyNotFound):
-		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{err.Error()})
-		return
+	
 	case err != nil:
 		h.log.Error(err)
 		c.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse{err.Error()})
@@ -58,11 +60,13 @@ func (h *Handler) CreateTender(c *gin.Context) {
 
 // Получить тендеры пользователя
 func (h *Handler) GetMyTenders(c *gin.Context) {
-	var query myTenderQuery
+	var query myQuery
 	if err := c.BindQuery(&query); err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{fmt.Sprintf("неккоректный query: %v", err)})
 		return
 	}
+
+	log.Println(query)
 
 	tenders, err := h.srv.GetUserTenders(c.Request.Context(), query.Username, query.Limit, query.Offset)
 	switch {
@@ -86,7 +90,7 @@ func (h *Handler) GetTenderStatus(c *gin.Context) {
 		return
 	}
 
-	var query usernameQuery
+	var query UsernameQuery
 	if err := c.BindQuery(&query); err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{fmt.Sprintf("неккоректный query: %v", err)})
 		return
@@ -94,14 +98,14 @@ func (h *Handler) GetTenderStatus(c *gin.Context) {
 
 	status, err := h.srv.GetTenderStatus(c.Request.Context(), uri.ID, query.Username)
 	switch {
-	case errors.Is(err, repository.ErrTenderNotFound) || errors.Is(err, repository.ErrTenderORVersionNotFound):
-		c.AbortWithStatusJSON(http.StatusNotFound, errorResponse{err.Error()})
-		return
 	case errors.Is(err, repository.ErrUserNotExist):
 		c.AbortWithStatusJSON(http.StatusUnauthorized, errorResponse{err.Error()})
 		return
 	case errors.Is(err, repository.ErrRelationNotExist):
 		c.AbortWithStatusJSON(http.StatusForbidden, errorResponse{err.Error()})
+		return
+	case errors.Is(err, repository.ErrTenderNotFound) || errors.Is(err, repository.ErrTenderORVersionNotFound):
+		c.AbortWithStatusJSON(http.StatusNotFound, errorResponse{err.Error()})
 		return
 	case err != nil:
 		h.log.Error(err)
@@ -154,7 +158,7 @@ func (h *Handler) EditTender(c *gin.Context) {
 		return
 	}
 
-	var query usernameQuery
+	var query UsernameQuery
 	if err := c.BindQuery(&query); err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{fmt.Sprintf("неккоректный query: %v", err)})
 		return
@@ -199,7 +203,7 @@ func (h *Handler) RollbackTenderVersion(c *gin.Context) {
 		return
 	}
 
-	var query usernameQuery
+	var query UsernameQuery
 	if err := c.BindQuery(&query); err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{fmt.Sprintf("неккоректный query: %v", err)})
 		return

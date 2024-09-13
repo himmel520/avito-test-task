@@ -8,8 +8,8 @@ import (
 
 	"git.codenrock.com/avito-testirovanie-na-backend-1270/cnrprod1725721384-team-77753/zadanie-6105/internal/repository"
 	"git.codenrock.com/avito-testirovanie-na-backend-1270/cnrprod1725721384-team-77753/zadanie-6105/models"
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 // GetTenders возвращает список тендеров с заданными фильтрами и пагинацией
@@ -260,4 +260,23 @@ func (p *Postgres) RollbackTender(ctx context.Context, tenderID string, version 
 	}
 
 	return tender, err
+}
+
+func (p *Postgres) IsTenderPudlished(ctx context.Context, tenderID string) error {
+	var status string
+
+    err := p.DB.QueryRow(ctx, `
+	SELECT 	
+		status 
+	FROM tender 
+		WHERE id = $1`, tenderID).Scan(&status)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return repository.ErrTenderNotFound
+	}
+
+    if status != "Published" {
+        return repository.ErrTenderClosed
+    }
+	
+	return nil
 }

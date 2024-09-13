@@ -23,10 +23,12 @@ var (
 	ErrTenderNotFound = errors.New("тендер не найден")
 	// ErrTenderORVersionNotFound указывает на отсутствие тендера или версии.
 	ErrTenderORVersionNotFound = errors.New("тендер или версия не найдены")
+	ErrTenderClosed = errors.New("тендер закрыт")
 )
 
 // BID
 var (
 	ErrBidDependencyNotFound = errors.New("нельзя создать предложение, так как нет тендера или пользователя")
 	ErrBidUnique = errors.New("на один тендер может быть одно предложение от организации")
+	ErrBidTenderNotFound = errors.New("тендер или предложение не найдено")
 )

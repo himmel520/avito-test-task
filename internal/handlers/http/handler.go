@@ -42,7 +42,7 @@ func (h *Handler) InitRoutes() *gin.Engine {
 		bids := api.Group("/bids")
 		{
 			bids.POST("/new", h.CreateBid) // Создание нового предложения
-			bids.GET("/my", h.GetMyBids)   // Получение списка ваших предложений
+			bids.GET("/my", h.GetMyBids)   // Получение списка предложений пользователя
 
 			// route /:bidId
 			{

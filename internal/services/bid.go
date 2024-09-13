@@ -7,6 +7,11 @@ import (
 )
 
 func (s *Service) CreateBid(ctx context.Context, bid *models.BidCreate) (*models.BidResponse, error) {
+	// Проверка статуса тендера
+	if err := s.repo.IsTenderPudlished(ctx, bid.TenderID); err != nil{
+		return nil, err
+	}
+
 	// проверяет, является ли пользователь ответственным за любую организацию
 	if err := s.repo.IsUserResponsible(ctx, bid.AuthorId); err != nil {
 		return nil, err
@@ -16,11 +21,22 @@ func (s *Service) CreateBid(ctx context.Context, bid *models.BidCreate) (*models
 }
 
 func (s *Service) GetUserBids(ctx context.Context, username string, limit, offset int32) ([]*models.BidResponse, error) {
-	return s.repo.GetUserBids(ctx, username, limit, offset)
+	// проверяет существование пользователя
+	userId, err := s.repo.GetUserIDByName(ctx, username)
+	if err != nil {
+		return nil, err
+	}
+	
+	return s.repo.GetUserBids(ctx, userId, limit, offset)
 }
 
 func (s *Service) GetBidsForTender(ctx context.Context, tenderID, username string, limit, offset int32) ([]*models.BidResponse, error) {
-	return s.repo.GetBidsForTender(ctx, tenderID, username, limit, offset)
+	// проверяет, является ли пользователь создателем тендера
+	if err := s.repo.IsTenderCreatorByName(ctx, tenderID, username); err != nil {
+		return nil, err
+	}
+
+	return s.repo.GetBidsForTender(ctx, tenderID, limit, offset)
 }
 
 func (s *Service) GetBidStatus(ctx context.Context, bidID string, username string) (*models.BidStatus, error) {

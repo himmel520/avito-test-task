@@ -34,14 +34,65 @@ func (p *Postgres) CreateBid(ctx context.Context, bid *models.BidCreate) (*model
 	return bidResp, err
 }
 
-func (p *Postgres) GetUserBids(ctx context.Context, username string, limit, offset int32) ([]*models.BidResponse, error) {
-	// Реализация получения предложений пользователя
-	return nil, nil
+func (p *Postgres) GetUserBids(ctx context.Context, userID string, limit, offset int32) ([]*models.BidResponse, error) {
+	rows, err := p.DB.Query(ctx, `
+	SELECT *
+	FROM bid b 
+		WHERE author_id = $1
+	ORDER BY name ASC
+	LIMIT $2 OFFSET $3;`, userID, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	bids := []*models.BidResponse{}
+	for rows.Next() {
+		bid := &models.BidResponse{}
+		if err := rows.Scan(
+			&bid.ID, &bid.Name, &bid.Description, &bid.Status, &bid.TenderID,
+			&bid.AuthorType, &bid.AuthorID, &bid.Version, &bid.CreatedAt); err != nil {
+			return nil, err
+		}
+
+		bids = append(bids, bid)
+	}
+
+	return bids, err
 }
 
-func (p *Postgres) GetBidsForTender(ctx context.Context, tenderID, username string, limit, offset int32) ([]*models.BidResponse, error) {
-	// Реализация получения предложений для тендера
-	return nil, nil
+func (p *Postgres) GetBidsForTender(ctx context.Context, tenderID string, limit, offset int32) ([]*models.BidResponse, error) {
+	rows, err := p.DB.Query(ctx, `
+	SELECT *
+	FROM bid
+		WHERE tender_id = $1
+		AND status = 'Published'
+	ORDER BY created_at ASC
+	LIMIT $2
+	OFFSET $3;
+	`, tenderID, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	bids := []*models.BidResponse{}
+	for rows.Next() {
+		bid := &models.BidResponse{}
+		if err := rows.Scan(
+			&bid.ID, &bid.Name, &bid.Description, &bid.Status, &bid.TenderID,
+			&bid.AuthorType, &bid.AuthorID, &bid.Version, &bid.CreatedAt); err != nil {
+			return nil, err
+		}
+
+		bids = append(bids, bid)
+	}
+
+	if len(bids) == 0 {
+		return nil, repository.ErrBidTenderNotFound
+	}
+
+	return bids, err
 }
 
 func (p *Postgres) GetBidStatus(ctx context.Context, bidID string, username string) (*models.BidStatus, error) {
