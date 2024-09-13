@@ -113,6 +113,15 @@ CREATE TABLE IF NOT EXISTS bid_version (
     PRIMARY KEY (bid_id, version) 
 );
 
+CREATE TABLE IF NOT EXISTS bid_decision (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    bid_id UUID NOT NULL REFERENCES bid(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES employee(id) ON DELETE CASCADE,
+    decision VARCHAR(10) NOT NULL CHECK (decision IN ('Approved', 'Rejected')),  
+    UNIQUE (bid_id, user_id) 
+);
+
+
 CREATE TABLE IF NOT EXISTS bid_feedback (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), 
     bid_id UUID NOT NULL REFERENCES bid(id) ON DELETE CASCADE, 

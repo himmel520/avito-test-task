@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
+// CreateBid создает новое предложение и возвращает его сгенерированным ID
 func (p *Postgres) CreateBid(ctx context.Context, bid *models.BidCreate) (*models.BidResponse, error) {
 	bidResp := &models.BidResponse{}
 
@@ -37,6 +38,7 @@ func (p *Postgres) CreateBid(ctx context.Context, bid *models.BidCreate) (*model
 	return bidResp, err
 }
 
+// GetUserBids получает список предложений пользователя с указанным ID с пагинацией
 func (p *Postgres) GetUserBids(ctx context.Context, userID string, limit, offset int32) ([]*models.BidResponse, error) {
 	rows, err := p.DB.Query(ctx, `
 	SELECT *
@@ -64,6 +66,7 @@ func (p *Postgres) GetUserBids(ctx context.Context, userID string, limit, offset
 	return bids, err
 }
 
+// GetBidsForTender получает список предложений для указанного тендера с пагинацией и исключает предложения со статусом 'Created'
 func (p *Postgres) GetBidsForTender(ctx context.Context, tenderID string, limit, offset int32) ([]*models.BidResponse, error) {
 	rows, err := p.DB.Query(ctx, `
 	SELECT *
@@ -98,6 +101,7 @@ func (p *Postgres) GetBidsForTender(ctx context.Context, tenderID string, limit,
 	return bids, err
 }
 
+// GetBidByID получает предложение по его ID
 func (p *Postgres) GetBidByID(ctx context.Context, bidID string) (*models.BidResponse, error) {
 	bid := &models.BidResponse{}
 	err := p.DB.QueryRow(ctx, `
@@ -113,6 +117,7 @@ func (p *Postgres) GetBidByID(ctx context.Context, bidID string) (*models.BidRes
 	return bid, err
 }
 
+// UpdateBidStatus обновляет статус предложения по его ID
 func (p *Postgres) UpdateBidStatus(ctx context.Context, bidID, username string, status *models.BidStatus) (*models.BidResponse, error) {
 	bid := &models.BidResponse{}
 	err := p.DB.QueryRow(ctx, `
@@ -129,6 +134,7 @@ func (p *Postgres) UpdateBidStatus(ctx context.Context, bidID, username string, 
 	return bid, err
 }
 
+// EditBid обновляет предложение по его ID и сохраняет старую версию в историю
 func (p *Postgres) EditBid(ctx context.Context, bidID string, bidEdit *models.BidEdit) (*models.BidResponse, error) {
 	tx, err := p.DB.Begin(ctx)
 	if err != nil {
@@ -183,23 +189,7 @@ func (p *Postgres) EditBid(ctx context.Context, bidID string, bidEdit *models.Bi
 	return bid, err
 }
 
-func (p *Postgres) SubmitBidDecision(ctx context.Context, bidID, username string, decision *models.BidDecision) (*models.BidResponse, error) {
-	// Реализация отправки решения по предложению
-	return nil, nil
-}
-
-func (p *Postgres) SubmitBidFeedback(ctx context.Context, bidID string, feedback *models.BidFeedback) error {
-	pgCmd, err := p.DB.Exec(ctx, `
-	INSERT INTO bid_feedback 
-		(bid_id, description) 
-    VALUES ($1, $2) `, bidID, feedback)
-	if pgCmd.RowsAffected() == 0 {
-		return repository.ErrBidNotFound
-	}
-
-	return err
-}
-
+// RollbackBid откатывает предложение к указанной версии
 func (p *Postgres) RollbackBid(ctx context.Context, bidID string, version int32) (*models.BidResponse, error) {
 	tx, err := p.DB.Begin(ctx)
 	if err != nil {
@@ -255,39 +245,4 @@ func (p *Postgres) RollbackBid(ctx context.Context, bidID string, version int32)
 	}
 
 	return bid, err
-}
-
-func (p *Postgres) GetBidReviews(ctx context.Context, tenderID, authorUsername string, limit, offset int32) ([]*models.BidReviewResponse, error) {
-	rows, err := p.DB.Query(ctx, `
-	SELECT bf.*
-		FROM bid_feedback bf
-		JOIN bid b ON bf.bid_id = b.id
-		WHERE b.tender_id = $1
-		AND EXISTS (
-			SELECT 1
-			FROM employee e
-				WHERE e.id = b.author_id
-				AND e.username = $2  
-		ORDER BY created_at ASC
-		LIMIT $3
-		OFFSET $4);`, tenderID, authorUsername, limit, offset)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var reviews []*models.BidReviewResponse
-	for rows.Next() {
-		var review models.BidReviewResponse
-		if err := rows.Scan(&review.ID, &review.BidID, &review.Description, &review.CreatedAt); err != nil {
-			return nil, err
-		}
-		reviews = append(reviews, &review)
-	}
-
-	if len(reviews) == 0 {
-		return nil, repository.ErrBidReviewsNotFound
-	}
-
-	return reviews, err
 }

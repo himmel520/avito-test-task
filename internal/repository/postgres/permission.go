@@ -111,6 +111,7 @@ func (p *Postgres) IsTenderCreatorByID(ctx context.Context, tenderId, creatorId 
 	return err
 }
 
+// IsBidCreatorByName проверяет, является ли пользователь создателем указанного предложения по имени
 func (p *Postgres) IsBidCreatorByName(ctx context.Context, bidID, creatorUsername string) error {
 	var isCreator bool
 
@@ -151,12 +152,11 @@ func (p *Postgres) GetUserIDByName(ctx context.Context, username string) (string
 	return userId, err
 }
 
-
-// Относится ли пользователь к организации тендера
+// IsUserResponsibleForTender проверяет, имеет ли пользователь права на организацию тендера
 func (p *Postgres) IsUserResponsibleForTender(ctx context.Context, tenderID, username string) error {
-    var isRelated bool
+	var isRelated bool
 
-    err := p.DB.QueryRow(ctx, `
+	err := p.DB.QueryRow(ctx, `
     SELECT EXISTS (
 		SELECT 1
 		FROM tender t
@@ -167,22 +167,51 @@ func (p *Postgres) IsUserResponsibleForTender(ctx context.Context, tenderID, use
 	from employee e
 		where username = $1; `, username, tenderID).Scan(&isRelated)
 
-    if errors.Is(err, pgx.ErrNoRows) {
-        return repository.ErrUserNotExist
-    }
+	if errors.Is(err, pgx.ErrNoRows) {
+		return repository.ErrUserNotExist
+	}
 
-    if !isRelated {
-        return repository.ErrRelationNotExist
-    }
+	if !isRelated {
+		return repository.ErrRelationNotExist
+	}
 
-    return err
+	return err
 }
 
-// Относится ли пользователь к организации автора bid
-func (p *Postgres) IsUserResponsibleForAuthorBid(ctx context.Context, bidID, username string) error {
-    var isRelated bool
+// IsUserResponsibleForTenderByBidID проверяет, имеет ли пользователь права на организацию тендера, к которому относится предложение
+func (p *Postgres) IsUserResponsibleForTenderByBidID(ctx context.Context, bidID, username string) error {
+	var isRelated bool
 
-    err := p.DB.QueryRow(ctx, `
+	err := p.DB.QueryRow(ctx, `
+    SELECT EXISTS (
+		SELECT 1
+			FROM tender t
+			JOIN organization_responsible orr ON orr.organization_id = t.organization_id
+			JOIN employee e ON e.id = orr.user_id
+			WHERE t.id = (
+				SELECT tender_id
+				FROM bid
+				WHERE id = $2
+		)
+		AND e.username = $1
+	) AS is_related;`, username, bidID).Scan(&isRelated)
+
+	if errors.Is(err, pgx.ErrNoRows) {
+		return repository.ErrUserNotExist
+	}
+
+	if !isRelated {
+		return repository.ErrRelationNotExist
+	}
+
+	return err
+}
+
+// IsUserResponsibleForAuthorBid проверяет, относится ли пользователь к организации автора предложения
+func (p *Postgres) IsUserResponsibleForAuthorBid(ctx context.Context, bidID, username string) error {
+	var isRelated bool
+
+	err := p.DB.QueryRow(ctx, `
     SELECT EXISTS (
 		SELECT 1
 			FROM bid b
@@ -194,13 +223,13 @@ func (p *Postgres) IsUserResponsibleForAuthorBid(ctx context.Context, bidID, use
 	FROM employee e
 		WHERE e.username = $1;`, username, bidID).Scan(&isRelated)
 
-    if errors.Is(err, pgx.ErrNoRows) {
-        return repository.ErrUserNotExist
-    }
+	if errors.Is(err, pgx.ErrNoRows) {
+		return repository.ErrUserNotExist
+	}
 
-    if !isRelated {
-        return repository.ErrRelationNotExist
-    }
+	if !isRelated {
+		return repository.ErrRelationNotExist
+	}
 
-    return err
+	return err
 }

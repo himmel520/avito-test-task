@@ -5,7 +5,7 @@ import "time"
 // BidStatus представляет статус предложения
 type BidStatus string
 
-const (
+var (
 	BidStatusCreated   BidStatus = "Created"
 	BidStatusPublished BidStatus = "Published"
 	BidStatusCanceled  BidStatus = "Canceled"
@@ -16,7 +16,7 @@ const (
 // BidDecision представляет решение по предложению
 type BidDecision string
 
-const (
+var (
 	BidDecisionApproved BidDecision = "Approved"
 	BidDecisionRejected BidDecision = "Rejected"
 )

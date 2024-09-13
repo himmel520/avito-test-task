@@ -9,6 +9,7 @@ type errorResponse struct {
 	Reason string `json:"reason"`
 }
 
+// PaginationQuery содержит параметры пагинации
 type PaginationQuery struct {
 	Limit  int32 `form:"limit,default=5" binding:"omitempty,min=1"`
 	Offset int32 `form:"offset,default=0" binding:"omitempty,min=0"`
@@ -19,6 +20,7 @@ type UsernameQuery struct {
 	Username string `form:"username" binding:"required,max=50"`
 }
 
+// myQuery содержит параметры для запросов с пагинацией и именем пользователя
 type myQuery struct {
 	PaginationQuery
 	UsernameQuery
@@ -33,7 +35,7 @@ type tenderIdURI struct {
 	ID string `uri:"tenderId" binding:"required,uuid"`
 }
 
-// allTenderFilterQuery содержит параметры для фильтрации и пагинации всех тендеров
+// allTenderQuery содержит параметры для фильтрации и пагинации всех тендеров
 type allTenderQuery struct {
 	Limit       int32                      `form:"limit,default=5" binding:"omitempty,min=1"`
 	Offset      int32                      `form:"offset,default=0" binding:"omitempty,min=0"`
@@ -56,14 +58,17 @@ type rollbackTenderUri struct {
 
 // BID
 
+// bidTenderIdURI содержит идентификатор тендера из URI запроса
 type bidTenderIdURI struct {
 	ID string `uri:"id" binding:"required,uuid"`
 }
 
+// bidIdURI содержит идентификатор предложения из URI запроса
 type bidIdURI struct {
 	ID string `uri:"id" binding:"required,uuid"`
 }
 
+// updateBidStatusQuery содержит параметры для обновления статуса предложения
 type updateBidStatusQuery struct {
 	Status   models.BidStatus `form:"status" binding:"required,oneof=Created Published Closed"`
 	Username string           `form:"username" binding:"required,max=50"`
@@ -75,15 +80,23 @@ type rollbackBidUri struct {
 	Version int32  `uri:"version" binding:"required,min=1"`
 }
 
+// decisionQuery содержит параметры для подачи решения по предложению
+type decisionQuery struct {
+	Decision models.BidDecision `form:"decision" binding:"required,oneof=Approved Rejected"`
+	UsernameQuery
+}
+
 // ----------------------------------------------------------------------------
 
 // FEEDBACK
 
+// feedbackQuery содержит параметры для подачи отзыва по предложению
 type feedbackQuery struct {
 	BidFeedback models.BidFeedback `form:"bidFeedback" binding:"required,max=500"`
 	Username    string             `form:"username" binding:"required,max=50"`
 }
 
+// reviewsQuery содержит параметры для получения отзывов по предложению
 type reviewsQuery struct {
 	AuthorUsername    string `form:"authorUsername" binding:"required,max=50"`
 	RequesterUsername string `form:"requesterUsername" binding:"required,max=50"`

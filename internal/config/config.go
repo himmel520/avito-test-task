@@ -2,8 +2,6 @@ package config
 
 import (
 	"os"
-
-	"github.com/joho/godotenv"
 )
 
 type ServerConfig struct {
@@ -25,9 +23,9 @@ type Config struct {
 }
 
 func New() (*Config, error) {
-	if err := godotenv.Load(); err != nil {
-		return nil, err
-	}
+	// if err := godotenv.Load(); err != nil {
+	// 	return nil, err
+	// }
 
 	return &Config{
 		Server: ServerConfig{

@@ -9,7 +9,7 @@
 
 ### Новые сущности
 [migrations](https://git.codenrock.com/avito-testirovanie-na-backend-1270/cnrprod1725721384-team-77753/zadanie-6105/-/tree/dev/migrations?ref_type=heads)
-- png со схемой таблиц
+
 
 ### Возникшие проблемы и их решения(ADR)
 

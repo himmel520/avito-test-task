@@ -262,6 +262,7 @@ func (p *Postgres) RollbackTender(ctx context.Context, tenderID string, version 
 	return tender, err
 }
 
+// IsTenderPublished проверяет, опубликован ли тендер
 func (p *Postgres) IsTenderPudlished(ctx context.Context, tenderID string) error {
 	var status string
 
