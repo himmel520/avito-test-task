@@ -36,5 +36,6 @@ var (
 	ErrBidTenderNotFound = errors.New("тендер или предложение не найдено")
 	ErrBidNotFound = errors.New("предложение не найдено")
 	ErrBidORVersionNotFound = errors.New("предложение или версия не найдены")
+	ErrBidReviewsNotFound = errors.New("тендер или отзывы не найдены")
 )
 

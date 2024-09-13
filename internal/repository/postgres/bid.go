@@ -203,7 +203,7 @@ func (p *Postgres) SubmitBidFeedback(ctx context.Context, bidID string, feedback
 func (p *Postgres) RollbackBid(ctx context.Context, bidID string, version int32) (*models.BidResponse, error) {
 	tx, err := p.DB.Begin(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+		return nil, err
 	}
 
 	defer func() {
@@ -257,7 +257,37 @@ func (p *Postgres) RollbackBid(ctx context.Context, bidID string, version int32)
 	return bid, err
 }
 
-func (p *Postgres) GetBidReviews(ctx context.Context, tenderID, authorUsername, requesterUsername string, limit, offset int32) ([]*models.BidReviewResponse, error) {
-	// Реализация получения отзывов на предложения
-	return nil, nil
+func (p *Postgres) GetBidReviews(ctx context.Context, tenderID, authorUsername string, limit, offset int32) ([]*models.BidReviewResponse, error) {
+	rows, err := p.DB.Query(ctx, `
+	SELECT bf.*
+		FROM bid_feedback bf
+		JOIN bid b ON bf.bid_id = b.id
+		WHERE b.tender_id = $1
+		AND EXISTS (
+			SELECT 1
+			FROM employee e
+				WHERE e.id = b.author_id
+				AND e.username = $2  
+		ORDER BY created_at ASC
+		LIMIT $3
+		OFFSET $4);`, tenderID, authorUsername, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var reviews []*models.BidReviewResponse
+	for rows.Next() {
+		var review models.BidReviewResponse
+		if err := rows.Scan(&review.ID, &review.BidID, &review.Description, &review.CreatedAt); err != nil {
+			return nil, err
+		}
+		reviews = append(reviews, &review)
+	}
+
+	if len(reviews) == 0 {
+		return nil, repository.ErrBidReviewsNotFound
+	}
+
+	return reviews, err
 }

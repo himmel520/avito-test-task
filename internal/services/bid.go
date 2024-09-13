@@ -119,5 +119,11 @@ func (s *Service) RollbackBid(ctx context.Context, bidID, username string, versi
 }
 
 func (s *Service) GetBidReviews(ctx context.Context, tenderID, authorUsername, requesterUsername string, limit, offset int32) ([]*models.BidReviewResponse, error) {
-	return s.repo.GetBidReviews(ctx, tenderID, authorUsername, requesterUsername, limit, offset)
+	// проверяет, относится ли пользователь к организации тендера
+	if err := s.repo.IsUserResponsibleForTender(ctx, tenderID, requesterUsername); err != nil {
+		// пользователь не относится к создателем тендера
+		return nil, err
+	}
+
+	return s.repo.GetBidReviews(ctx, tenderID, authorUsername, limit, offset)
 }

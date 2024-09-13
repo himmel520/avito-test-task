@@ -14,12 +14,6 @@ type PaginationQuery struct {
 	Offset int32 `form:"offset,default=0" binding:"omitempty,min=0"`
 }
 
-// type myQuery struct {
-// 	Limit    int32  `form:"limit,default=5" binding:"omitempty,min=1"`
-// 	Offset   int32  `form:"offset,default=0" binding:"omitempty,min=0"`
-// 	Username string `form:"username" binding:"required,max=50"`
-// }
-
 // usernameQuery содержит имя пользователя из строки запроса
 type UsernameQuery struct {
 	Username string `form:"username" binding:"required,max=50"`
@@ -88,4 +82,10 @@ type rollbackBidUri struct {
 type feedbackQuery struct {
 	BidFeedback models.BidFeedback `form:"bidFeedback" binding:"required,max=500"`
 	Username    string             `form:"username" binding:"required,max=50"`
+}
+
+type reviewsQuery struct {
+	AuthorUsername    string `form:"authorUsername" binding:"required,max=50"`
+	RequesterUsername string `form:"requesterUsername" binding:"required,max=50"`
+	PaginationQuery
 }

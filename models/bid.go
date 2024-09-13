@@ -67,7 +67,7 @@ type BidFeedback string
 // BidReview представляет отзыв о предложении
 type BidReviewResponse struct {
 	ID             string      `json:"id"`
-	AuthorUsername string      `json:"-"`
+	BidID          string      `json:"-"`
 	Description    BidFeedback `json:"description"`
 	CreatedAt      time.Time   `json:"createdAt"`
 }

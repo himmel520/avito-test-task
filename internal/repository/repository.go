@@ -43,7 +43,7 @@ type BidRepository interface {
 	SubmitBidDecision(ctx context.Context, bidID, username string, decision *models.BidDecision) (*models.BidResponse, error)
 	SubmitBidFeedback(ctx context.Context, bidID string, feedback *models.BidFeedback) error
 	RollbackBid(ctx context.Context, bidID string, version int32) (*models.BidResponse, error)
-	GetBidReviews(ctx context.Context, tenderID, authorUsername, requesterUsername string, limit, offset int32) ([]*models.BidReviewResponse, error)
+	GetBidReviews(ctx context.Context, tenderID, authorUsername string, limit, offset int32) ([]*models.BidReviewResponse, error)
 
 	IsBidCreatorByName(ctx context.Context, bidID, creatorUsername string) error
 	IsUserResponsibleForTender(ctx context.Context, tenderID, username string) error

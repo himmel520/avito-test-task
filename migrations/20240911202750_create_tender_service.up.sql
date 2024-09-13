@@ -24,7 +24,6 @@ CREATE TABLE IF NOT EXISTS organization (
     type organization_type,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-
 );
 
 CREATE TABLE IF NOT EXISTS organization_responsible (
@@ -117,6 +116,6 @@ CREATE TABLE IF NOT EXISTS bid_version (
 CREATE TABLE IF NOT EXISTS bid_feedback (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), 
     bid_id UUID NOT NULL REFERENCES bid(id) ON DELETE CASCADE, 
-    description TEXT CHECK (LENGTH(feedback) <= 500), 
+    description TEXT CHECK (LENGTH(description) <= 500), 
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW() 
 );
