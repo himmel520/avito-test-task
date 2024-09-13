@@ -37,13 +37,17 @@ type BidRepository interface {
 	CreateBid(ctx context.Context, bid *models.BidCreate) (*models.BidResponse, error)
 	GetUserBids(ctx context.Context, userID string, limit, offset int32) ([]*models.BidResponse, error)
 	GetBidsForTender(ctx context.Context, tenderID string, limit, offset int32) ([]*models.BidResponse, error)
-	GetBidStatus(ctx context.Context, bidID string, username string) (*models.BidStatus, error)
+	GetBidByID(ctx context.Context, bidID string) (*models.BidResponse, error)
 	UpdateBidStatus(ctx context.Context, bidID, username string, status *models.BidStatus) (*models.BidResponse, error)
-	EditBid(ctx context.Context, bidID, username string, bid *models.BidEdit) (*models.BidResponse, error)
+	EditBid(ctx context.Context, bidID string, bidEdit *models.BidEdit) (*models.BidResponse, error)
 	SubmitBidDecision(ctx context.Context, bidID, username string, decision *models.BidDecision) (*models.BidResponse, error)
-	SubmitBidFeedback(ctx context.Context, bidID, username string, feedback *models.BidFeedback) (*models.BidResponse, error)
-	RollbackBid(ctx context.Context, bidID, username string, version int32) (*models.BidResponse, error)
-	GetBidReviews(ctx context.Context, tenderID, authorUsername, requesterUsername string, limit, offset int32) ([]*models.BidReview, error)
+	SubmitBidFeedback(ctx context.Context, bidID string, feedback *models.BidFeedback) error
+	RollbackBid(ctx context.Context, bidID string, version int32) (*models.BidResponse, error)
+	GetBidReviews(ctx context.Context, tenderID, authorUsername, requesterUsername string, limit, offset int32) ([]*models.BidReviewResponse, error)
+
+	IsBidCreatorByName(ctx context.Context, bidID, creatorUsername string) error
+	IsUserResponsibleForTender(ctx context.Context, tenderID, username string) error
+	IsUserResponsibleForAuthorBid(ctx context.Context, bidID, username string) error
 }
 
 type Repository interface {

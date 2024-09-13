@@ -124,7 +124,7 @@ func (h *Handler) UpdateTenderStatus(c *gin.Context) {
 		return
 	}
 
-	var query editTenderQuery
+	var query updateTenderStatusQuery
 	if err := c.BindQuery(&query); err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{fmt.Sprintf("неккоректный query: %v", err)})
 		return

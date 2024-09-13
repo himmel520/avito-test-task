@@ -111,6 +111,30 @@ func (p *Postgres) IsTenderCreatorByID(ctx context.Context, tenderId, creatorId 
 	return err
 }
 
+func (p *Postgres) IsBidCreatorByName(ctx context.Context, bidID, creatorUsername string) error {
+	var isCreator bool
+
+	err := p.DB.QueryRow(ctx, `
+    SELECT EXISTS (
+		SELECT 1
+		FROM bid b 
+			WHERE author_id = e.id and id = $2
+	) AS is_creator
+	FROM employee e
+		WHERE username = $1`, creatorUsername, bidID).Scan(&isCreator)
+
+	switch {
+	// пользователь не существует или некорректен
+	case errors.Is(err, pgx.ErrNoRows):
+		return repository.ErrUserNotExist
+	// нет связи пользователь и предложение
+	case !isCreator:
+		return repository.ErrRelationNotExist
+	}
+
+	return err
+}
+
 // GetUserIDByName возвращает id пользователя по его имени
 func (p *Postgres) GetUserIDByName(ctx context.Context, username string) (string, error) {
 	var userId string
@@ -125,4 +149,58 @@ func (p *Postgres) GetUserIDByName(ctx context.Context, username string) (string
 	}
 
 	return userId, err
+}
+
+
+// Относится ли пользователь к организации тендера
+func (p *Postgres) IsUserResponsibleForTender(ctx context.Context, tenderID, username string) error {
+    var isRelated bool
+
+    err := p.DB.QueryRow(ctx, `
+    SELECT EXISTS (
+		SELECT 1
+		FROM tender t
+		JOIN organization_responsible orr ON orr.user_id = e.id
+		WHERE t.id = $2
+		AND orr.organization_id = t.organization_id
+	) AS is_related
+	from employee e
+		where username = $1; `, username, tenderID).Scan(&isRelated)
+
+    if errors.Is(err, pgx.ErrNoRows) {
+        return repository.ErrUserNotExist
+    }
+
+    if !isRelated {
+        return repository.ErrRelationNotExist
+    }
+
+    return err
+}
+
+// Относится ли пользователь к организации автора bid
+func (p *Postgres) IsUserResponsibleForAuthorBid(ctx context.Context, bidID, username string) error {
+    var isRelated bool
+
+    err := p.DB.QueryRow(ctx, `
+    SELECT EXISTS (
+		SELECT 1
+			FROM bid b
+			JOIN organization_responsible orr ON orr.user_id = e.id
+			JOIN organization_responsible o ON o.organization_id = orr.organization_id
+				WHERE b.id = $2
+				AND o.user_id = b.author_id
+	) AS is_related
+	FROM employee e
+		WHERE e.username = $1;`, username, bidID).Scan(&isRelated)
+
+    if errors.Is(err, pgx.ErrNoRows) {
+        return repository.ErrUserNotExist
+    }
+
+    if !isRelated {
+        return repository.ErrRelationNotExist
+    }
+
+    return err
 }

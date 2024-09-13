@@ -47,7 +47,7 @@ type allTenderQuery struct {
 }
 
 // editTenderQuery содержит параметры для редактирования статуса тендера
-type editTenderQuery struct {
+type updateTenderStatusQuery struct {
 	Status   models.TenderStatus `form:"status" binding:"required,oneof=Created Published Closed"`
 	Username string              `form:"username" binding:"required,max=50"`
 }
@@ -61,6 +61,31 @@ type rollbackTenderUri struct {
 // ----------------------------------------------------------------------------
 
 // BID
+
 type bidTenderIdURI struct {
 	ID string `uri:"id" binding:"required,uuid"`
+}
+
+type bidIdURI struct {
+	ID string `uri:"id" binding:"required,uuid"`
+}
+
+type updateBidStatusQuery struct {
+	Status   models.BidStatus `form:"status" binding:"required,oneof=Created Published Closed"`
+	Username string           `form:"username" binding:"required,max=50"`
+}
+
+// rollbackTenderUri содержит параметры для отката тендера к определенной версии
+type rollbackBidUri struct {
+	ID      string `uri:"id" binding:"required,uuid"`
+	Version int32  `uri:"version" binding:"required,min=1"`
+}
+
+// ----------------------------------------------------------------------------
+
+// FEEDBACK
+
+type feedbackQuery struct {
+	BidFeedback models.BidFeedback `form:"bidFeedback" binding:"required,max=500"`
+	Username    string             `form:"username" binding:"required,max=50"`
 }

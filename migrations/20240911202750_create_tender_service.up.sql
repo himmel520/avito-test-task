@@ -117,7 +117,6 @@ CREATE TABLE IF NOT EXISTS bid_version (
 CREATE TABLE IF NOT EXISTS bid_feedback (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(), 
     bid_id UUID NOT NULL REFERENCES bid(id) ON DELETE CASCADE, 
-    username VARCHAR(100) NOT NULL, 
-    feedback TEXT CHECK (LENGTH(feedback) <= 1000), 
+    description TEXT CHECK (LENGTH(feedback) <= 500), 
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW() 
 );

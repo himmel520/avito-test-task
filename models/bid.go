@@ -57,12 +57,17 @@ type BidEdit struct {
 	Description *string `json:"description" binding:"omitempty,max=500"`
 }
 
+func (b *BidEdit) IsEmpty() bool {
+	return b.Name == nil && b.Description == nil
+}
+
 // BidFeedback представляет отзыв на предложение
 type BidFeedback string
 
 // BidReview представляет отзыв о предложении
-type BidReview struct {
-	ID          string    `json:"id"`
-	Description string    `json:"description"`
-	CreatedAt   time.Time `json:"createdAt"`
+type BidReviewResponse struct {
+	ID             string      `json:"id"`
+	AuthorUsername string      `json:"-"`
+	Description    BidFeedback `json:"description"`
+	CreatedAt      time.Time   `json:"createdAt"`
 }

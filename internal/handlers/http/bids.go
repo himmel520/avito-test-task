@@ -95,18 +95,113 @@ func (h *Handler) GetBidsForTender(c *gin.Context) {
 }
 
 func (h *Handler) GetBidStatus(c *gin.Context) {
-	h.log.Info("GetBidStatus endpoint called")
-	c.JSON(http.StatusOK, gin.H{"status": "status"})
+	var uri bidIdURI
+	if err := c.BindUri(&uri); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{fmt.Sprintf("неккоректный uri: %v", err)})
+		return
+	}
+
+	var query UsernameQuery
+	if err := c.BindQuery(&query); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{fmt.Sprintf("неккоректный query: %v", err)})
+		return
+	}
+
+	status, err := h.srv.GetBidStatus(c.Request.Context(), uri.ID, query.Username)
+	switch {
+	case errors.Is(err, repository.ErrUserNotExist):
+		c.AbortWithStatusJSON(http.StatusUnauthorized, errorResponse{err.Error()})
+		return
+	case errors.Is(err, repository.ErrRelationNotExist):
+		c.AbortWithStatusJSON(http.StatusForbidden, errorResponse{err.Error()})
+		return
+	case errors.Is(err, repository.ErrBidNotFound):
+		c.AbortWithStatusJSON(http.StatusNotFound, errorResponse{err.Error()})
+		return
+	case err != nil:
+		h.log.Error(err)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse{err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, status)
 }
 
 func (h *Handler) UpdateBidStatus(c *gin.Context) {
-	h.log.Info("UpdateBidStatus endpoint called")
-	c.JSON(http.StatusOK, gin.H{"message": "Bid status updated"})
+	var uri bidIdURI
+	if err := c.BindUri(&uri); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{fmt.Sprintf("неккоректный uri: %v", err)})
+		return
+	}
+
+	var query updateBidStatusQuery
+	if err := c.BindQuery(&query); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{fmt.Sprintf("неккоректный query: %v", err)})
+		return
+	}
+
+	bid, err := h.srv.UpdateBidStatus(c.Request.Context(), uri.ID, query.Username, &query.Status)
+	switch {
+	case errors.Is(err, repository.ErrUserNotExist):
+		c.AbortWithStatusJSON(http.StatusUnauthorized, errorResponse{err.Error()})
+		return
+	case errors.Is(err, repository.ErrRelationNotExist):
+		c.AbortWithStatusJSON(http.StatusForbidden, errorResponse{err.Error()})
+		return
+	case errors.Is(err, repository.ErrBidNotFound):
+		c.AbortWithStatusJSON(http.StatusNotFound, errorResponse{err.Error()})
+		return
+	case err != nil:
+		h.log.Error(err)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse{err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, bid)
 }
 
 func (h *Handler) EditBid(c *gin.Context) {
-	h.log.Info("EditBid endpoint called")
-	c.JSON(http.StatusOK, gin.H{"message": "Bid edited"})
+	var uri bidIdURI
+	if err := c.BindUri(&uri); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{fmt.Sprintf("неккоректный uri: %v", err)})
+		return
+	}
+
+	var query UsernameQuery
+	if err := c.BindQuery(&query); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{fmt.Sprintf("неккоректный query: %v", err)})
+		return
+	}
+
+	var bidEdit *models.BidEdit
+	if err := c.BindJSON(&bidEdit); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{fmt.Sprintf("ошибка в теле запроса: %v", err)})
+		return
+	}
+
+	if bidEdit.IsEmpty() {
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{"нет изменений"})
+		return
+	}
+
+	bid, err := h.srv.EditBid(c.Request.Context(), uri.ID, query.Username, bidEdit)
+	switch {
+	case errors.Is(err, repository.ErrUserNotExist):
+		c.AbortWithStatusJSON(http.StatusUnauthorized, errorResponse{err.Error()})
+		return
+	case errors.Is(err, repository.ErrRelationNotExist):
+		c.AbortWithStatusJSON(http.StatusForbidden, errorResponse{err.Error()})
+		return
+	case errors.Is(err, repository.ErrBidNotFound):
+		c.AbortWithStatusJSON(http.StatusNotFound, errorResponse{err.Error()})
+		return
+	case err != nil:
+		h.log.Error(err)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse{err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, bid)
 }
 
 func (h *Handler) SubmitDecision(c *gin.Context) {
@@ -115,13 +210,69 @@ func (h *Handler) SubmitDecision(c *gin.Context) {
 }
 
 func (h *Handler) SubmitFeedback(c *gin.Context) {
-	h.log.Info("SubmitFeedback endpoint called")
-	c.JSON(http.StatusOK, gin.H{"message": "Feedback submitted"})
+	var uri bidIdURI
+	if err := c.BindUri(&uri); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{fmt.Sprintf("неккоректный uri: %v", err)})
+	}
+
+	var query feedbackQuery
+	if err := c.BindQuery(&query); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{fmt.Sprintf("неккоректный query: %v", err)})
+		return
+	}
+
+	bid, err := h.srv.SubmitBidFeedback(c.Request.Context(), uri.ID, query.Username, &query.BidFeedback)
+	switch {
+	case errors.Is(err, repository.ErrUserNotExist):
+		c.AbortWithStatusJSON(http.StatusUnauthorized, errorResponse{err.Error()})
+		return
+	case errors.Is(err, repository.ErrRelationNotExist):
+		c.AbortWithStatusJSON(http.StatusForbidden, errorResponse{err.Error()})
+		return
+	case errors.Is(err, repository.ErrBidNotFound):
+		c.AbortWithStatusJSON(http.StatusNotFound, errorResponse{err.Error()})
+		return
+	case err != nil:
+		h.log.Error(err)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse{err.Error()})
+		return
+	}
+	
+	c.JSON(http.StatusOK, bid)
 }
 
 func (h *Handler) RollbackBidVersion(c *gin.Context) {
-	h.log.Info("RollbackBidVersion endpoint called")
-	c.JSON(http.StatusOK, gin.H{"message": "Bid version rolled back"})
+	var uri rollbackBidUri
+	if err := c.BindUri(&uri); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{fmt.Sprintf("неккоректный uri: %v", err)})
+		return
+	}
+
+	var query UsernameQuery
+	if err := c.BindQuery(&query); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, errorResponse{fmt.Sprintf("неккоректный query: %v", err)})
+		return
+	}
+
+	bid, err := h.srv.RollbackBid(c.Request.Context(), uri.ID, query.Username, uri.Version)
+	switch {
+	case errors.Is(err, repository.ErrUserNotExist):
+		c.AbortWithStatusJSON(http.StatusUnauthorized, errorResponse{err.Error()})
+		return
+	case errors.Is(err, repository.ErrRelationNotExist):
+		c.AbortWithStatusJSON(http.StatusForbidden, errorResponse{err.Error()})
+		return
+	case errors.Is(err, repository.ErrBidORVersionNotFound) || errors.Is(err, repository.ErrBidNotFound):
+		c.AbortWithStatusJSON(http.StatusNotFound, errorResponse{err.Error()})
+		return
+	case err != nil:
+		h.log.Error(err)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse{err.Error()})
+		return
+	}
+
+
+	c.JSON(http.StatusOK, bid)
 }
 
 func (h *Handler) GetBidReviews(c *gin.Context) {
