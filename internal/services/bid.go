@@ -107,7 +107,6 @@ func (s *Service) SubmitBidDecision(ctx context.Context, bidID, username string,
 	// создаем запись о решении
 	bid, err := s.repo.SubmitBidDecision(ctx, bidID, username, decision)
 	if err != nil {
-		s.log.Info(err)
 		return nil, err
 	}
 
@@ -119,7 +118,6 @@ func (s *Service) SubmitBidDecision(ctx context.Context, bidID, username string,
 
 	quorum, err := s.getQuorum(ctx, bidID)
 	if err != nil {
-		s.log.Info(err)
 		return nil, err
 	}
 
