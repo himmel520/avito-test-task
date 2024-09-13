@@ -66,9 +66,9 @@ func (p *Postgres) GetBidsForTender(ctx context.Context, tenderID string, limit,
 	SELECT *
 	FROM bid
 		WHERE tender_id = $1
-		AND status = 'Published'
+		AND status != 'Created' 
 	ORDER BY created_at ASC
-	LIMIT $2
+	LIMIT 
 	OFFSET $3;
 	`, tenderID, limit, offset)
 	if err != nil {

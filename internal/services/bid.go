@@ -40,6 +40,13 @@ func (s *Service) GetBidsForTender(ctx context.Context, tenderID, username strin
 }
 
 func (s *Service) GetBidStatus(ctx context.Context, bidID string, username string) (*models.BidStatus, error) {
+	// создатель предложения или тендера?
+
+	// для создателя предложения
+	// можно получать статус
+
+	// для создателя тендера
+	// любой статус кроме created
 	return s.repo.GetBidStatus(ctx, bidID, username)
 }
 
