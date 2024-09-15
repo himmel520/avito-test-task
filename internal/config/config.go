@@ -23,10 +23,6 @@ type Config struct {
 }
 
 func New() (*Config, error) {
-	// if err := godotenv.Load(); err != nil {
-	// 	return nil, err
-	// }
-
 	return &Config{
 		Server: ServerConfig{
 			Address: os.Getenv("SERVER_ADDRESS"),
