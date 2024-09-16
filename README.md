@@ -3,6 +3,11 @@
 ### Стэк
 - Go, Gin, pgxpool
 
+### Запуск
+```bash
+make run
+```
+
 ### Логика сервиса
 ![img со схемой работы всех слоев](./docs/service-logic.jpg)
 
